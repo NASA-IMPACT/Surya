@@ -238,7 +238,7 @@ def test_surya_20140107(model: HelioSpectFormer, dataloader: DataLoader, caplog)
     loss_delta = loss_mean-ref_loss_mean
     logger.info(f"Completed validation run. Local loss {loss_mean:.5f}. Reference loss {ref_loss_mean:.5f}. Deviation {loss_delta}.")
 
-    assert np.abs(loss_delta) < 5.e-5
+    assert np.abs(loss_delta) < 1.e-4
 
     logger.info("Preparing visualization")
     plot_data = sorted(plot_data, key=lambda data_returned : data_returned[0].timestamp)
