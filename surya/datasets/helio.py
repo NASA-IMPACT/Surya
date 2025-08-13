@@ -1,5 +1,6 @@
 import os
 import random
+from datetime import datetime
 import torch
 import numpy as np
 import skimage.measure
@@ -229,12 +230,13 @@ class HelioNetCDFDataset(Dataset):
         The logger is identified by SLURM job ID
         as well as the data processes rank and process ID.
         """
-        slurm_job_id = os.getenv("SLURM_JOB_ID")
+        os.makedirs("logs/data", exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%SZ")
         pid = os.getpid()
         self.logger = create_logger(
             output_dir="logs/data",
             dist_rank=self.rank,
-            name=f"{slurm_job_id}_{self.rank:>03}_data_{self.phase}_{pid}",
+            name=f"{timestamp}_{self.rank:>03}_data_{self.phase}_{pid}",
         )
 
     def filter_valid_indices(self):
