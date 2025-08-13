@@ -1,0 +1,24 @@
+,path,timestep,present
+0,data/Surya-1.0_validation_data/20140107_1500.nc,2014-01-07 15:00:00,1
+1,data/Surya-1.0_validation_data/20140107_1512.nc,2014-01-07 15:12:00,1
+2,data/Surya-1.0_validation_data/20140107_1524.nc,2014-01-07 15:24:00,1
+3,data/Surya-1.0_validation_data/20140107_1536.nc,2014-01-07 15:36:00,1
+4,data/Surya-1.0_validation_data/20140107_1548.nc,2014-01-07 15:48:00,1
+5,data/Surya-1.0_validation_data/20140107_1600.nc,2014-01-07 16:00:00,1
+6,data/Surya-1.0_validation_data/20140107_1612.nc,2014-01-07 16:12:00,1
+7,data/Surya-1.0_validation_data/20140107_1624.nc,2014-01-07 16:24:00,1
+8,data/Surya-1.0_validation_data/20140107_1636.nc,2014-01-07 16:36:00,1
+9,data/Surya-1.0_validation_data/20140107_1648.nc,2014-01-07 16:48:00,1
+10,data/Surya-1.0_validation_data/20140107_1700.nc,2014-01-07 17:00:00,1
+11,data/Surya-1.0_validation_data/20140107_1712.nc,2014-01-07 17:12:00,1
+12,data/Surya-1.0_validation_data/20140107_1724.nc,2014-01-07 17:24:00,1
+13,data/Surya-1.0_validation_data/20140107_1736.nc,2014-01-07 17:36:00,1
+14,data/Surya-1.0_validation_data/20140107_1748.nc,2014-01-07 17:48:00,1
+15,data/Surya-1.0_validation_data/20140107_1800.nc,2014-01-07 18:00:00,1
+16,data/Surya-1.0_validation_data/20140107_1812.nc,2014-01-07 18:12:00,1
+17,data/Surya-1.0_validation_data/20140107_1824.nc,2014-01-07 18:24:00,1
+18,data/Surya-1.0_validation_data/20140107_1836.nc,2014-01-07 18:36:00,1
+19,data/Surya-1.0_validation_data/20140107_1848.nc,2014-01-07 18:48:00,1
+20,data/Surya-1.0_validation_data/20140107_1900.nc,2014-01-07 19:00:00,1
+21,data/Surya-1.0_validation_data/20140107_1912.nc,2014-01-07 19:12:00,1
+22,data/Surya-1.0_validation_data/20140107_1924.nc,2014-01-07 19:24:00,1

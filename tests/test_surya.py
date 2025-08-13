@@ -1,4 +1,5 @@
 import os
+from huggingface_hub import hf_hub_download, snapshot_download
 import pytest
 import yaml
 import logging
@@ -31,29 +32,52 @@ class SDOImage:
     timestamp: str
     type: str
 
+@pytest.fixture(scope="module", autouse=True)
+def download_data():
+    snapshot_download(
+        repo_id="nasa-ibm-ai4science/Surya-1.0",
+        local_dir="data/Surya-1.0",
+        allow_patterns=["config.yaml", "scalers.yaml", "surya.366m.v1.pt"],
+        token=True,
+    )
+    snapshot_download(
+        repo_id="nasa-ibm-ai4science/Surya-1.0_validation_data",
+        repo_type="dataset",
+        local_dir="data/Surya-1.0_validation_data",
+        allow_patterns="20140107_1[5-9]??.nc",
+        token=True,
+    )
+
 @pytest.fixture
-def model() -> HelioSpectFormer:
+def config() -> dict:
+    with open("data/Surya-1.0/config.yaml") as fp:
+        config = yaml.safe_load(fp)
+
+    return config
+
+@pytest.fixture
+def model(config) -> HelioSpectFormer:
     model = HelioSpectFormer(
-        img_size=4096,
-        patch_size=16,
-        in_chans=len(SDO_CHANNELS),
-        embed_dim=1280,
-        time_embedding={"type" : "linear", "time_dim" : 2},
-        depth=10,
-        n_spectral_blocks=2,
-        num_heads=16,
-        mlp_ratio=4.0,
-        drop_rate=0.0,
+        img_size=config["model"]["img_size"],
+        patch_size=config["model"]["patch_size"],
+        in_chans=len(config["data"]["sdo_channels"]),
+        embed_dim=config["model"]["embed_dim"],
+        time_embedding={"type" : "linear", "time_dim" : len(config["data"]["time_delta_input_minutes"])},
+        depth=config["model"]["depth"],
+        n_spectral_blocks=config["model"]["n_spectral_blocks"],
+        num_heads=config["model"]["num_heads"],
+        mlp_ratio=config["model"]["mlp_ratio"],
+        drop_rate=config["model"]["drop_rate"],
         dtype=torch.bfloat16,
-        window_size=2,
-        dp_rank=4,
-        learned_flow=False,
-        use_latitude_in_learned_flow=False,
+        window_size=config["model"]["window_size"],
+        dp_rank=config["model"]["dp_rank"],
+        learned_flow=config["model"]["learned_flow"],
+        use_latitude_in_learned_flow=config["model"]["learned_flow"],
         init_weights=False,
         checkpoint_layers=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-        rpe=False,
-        ensemble=None,
-        finetune=False,
+        rpe=config["model"]["rpe"],
+        ensemble=config["model"]["ensemble"],
+        finetune=config["model"]["finetune"],
     )
     logger.info("Initialized the model.")
 
@@ -61,27 +85,27 @@ def model() -> HelioSpectFormer:
 
 @pytest.fixture
 def scalers() -> dict:
-    scalers_info = yaml.safe_load(open("data/scalers.yaml", "r"))
+    scalers_info = yaml.safe_load(open("data/Surya-1.0/scalers.yaml", "r"))
     scalers = build_scalers(info=scalers_info)
     logger.info("Built the scalers.")
     return scalers
 
 @pytest.fixture
-def dataset(scalers) -> HelioNetCDFDataset:
+def dataset(config, scalers) -> HelioNetCDFDataset:
     dataset = HelioNetCDFDataset(
-        index_path="data/validation_index.csv",
-        time_delta_input_minutes=[-60, 0],
-        time_delta_target_minutes=+60,
-        n_input_timestamps=2,
+        index_path="tests/test_surya_index.csv",
+        time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
+        time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
+        n_input_timestamps=len(config["data"]["time_delta_input_minutes"]),
         rollout_steps=1,
-        channels=SDO_CHANNELS,
-        drop_hmi_probablity=0.0,
-        num_mask_aia_channels=0,
-        use_latitude_in_learned_flow=False,
+        channels=config["data"]["sdo_channels"],
+        drop_hmi_probablity=config["data"]["drop_hmi_probablity"],
+        num_mask_aia_channels=config["data"]["num_mask_aia_channels"],
+        use_latitude_in_learned_flow=config["data"]["use_latitude_in_learned_flow"],
         scalers=scalers,
         phase="valid",
-        pooling=1,
-        random_vert_flip=False,
+        pooling=config["data"]["pooling"],
+        random_vert_flip=config["data"]["random_vert_flip"],
     )
     logger.info(f"Initialized the dataset. {len(dataset)} samples.")
 
@@ -193,7 +217,7 @@ def test_surya_20140107(model: HelioSpectFormer, dataloader: DataLoader, caplog)
     model.to(device)
     n_parameters = sum(p.numel() for p in model.parameters()) / 1e6
     logger.info(f"Surya FM: {n_parameters:.2f} M total parameters.")
-    path_weights = "data/weights/surya_366m.pth"
+    path_weights = "data/Surya-1.0/surya.366m.v1.pt"
     weights = torch.load(path_weights, map_location=torch.device(device), weights_only=True)
     model.load_state_dict(weights, strict=True)
     logger.info("Loaded weights.")
