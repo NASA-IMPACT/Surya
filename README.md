@@ -3,7 +3,11 @@ Implementation of the Surya Foundation Model and Downstream Tasks for Heliophysi
 
 ## Getting started
 
-Run an end to end test via `python -m pytest -s tests/test_surya.py`. The script will run the Surya to generate two-hour ahead forecasts for 2014-01-07 and generate a file `surya_model_validation.png` which should look as below. Moreover, it will test the performance of the model against threshold values as below:
+Clone the repo ...
+
+Create the environment ...
+
+Run an end to end test via `python -m pytest -s -o log_cli=true tests/test_surya.py`. The script will run the Surya to generate two-hour ahead forecasts for 2014-01-07 and generate a file `surya_model_validation.png` which should look as below. Moreover, it will test the performance of the model against threshold values as below:
 ```
 ============================= test session starts ==============================
 plugins: asdf-3.4.0
