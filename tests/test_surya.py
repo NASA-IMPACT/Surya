@@ -129,7 +129,7 @@ def dataset(config, scalers) -> HelioNetCDFDataset:
         n_input_timestamps=len(config["data"]["time_delta_input_minutes"]),
         rollout_steps=1,
         channels=config["data"]["sdo_channels"],
-        drop_hmi_probablity=config["data"]["drop_hmi_probablity"],
+        drop_hmi_probability=config["data"]["drop_hmi_probability"],
         num_mask_aia_channels=config["data"]["num_mask_aia_channels"],
         use_latitude_in_learned_flow=config["data"]["use_latitude_in_learned_flow"],
         scalers=scalers,
