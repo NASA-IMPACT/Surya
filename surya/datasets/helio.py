@@ -14,6 +14,8 @@ from functools import cache
 
 from numba import njit, prange
 
+import hdf5plugin
+
 
 @njit(parallel=True)
 def fast_transform(data, means, stds, sl_scale_factors, epsilons):
