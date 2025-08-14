@@ -1,4 +1,5 @@
 import os
+import sys
 import random
 from datetime import datetime
 import torch
@@ -20,8 +21,22 @@ import hdf5plugin
 @njit(parallel=True)
 def fast_transform(data, means, stds, sl_scale_factors, epsilons):
     """
-    implements signum log transform using numba for speed
-        note: this must reside outside the class definition from which it is called
+    Implements signum log transform using numba for speed
+    Notes:
+    - This must reside outside the class definition from which it is called.
+    - We used this function during pretraining for faster data loading. On select
+      GPU clusters it leads to the system hanging however when data loading happens
+      outside the GPU thread. See below for a non-numba-enhanced version.
+
+    Args:
+        data: Numpy array of shape C, H, W
+        means: Numpy array of shape C. Mean per channel.
+        stds: Numpy array of shape C. Standard deviation per channel.
+        sl_scale_factors: Numpy array of shape C. Signum-log scale factors.
+        epsilons: Numpy array of shape C. Constant to avoid zero division.
+
+    Returns:
+        Numpy array of shape C, H, W.
     """
     C, H, W = data.shape
     out = np.empty((C, H, W), dtype=np.float32)
@@ -41,9 +56,53 @@ def fast_transform(data, means, stds, sl_scale_factors, epsilons):
                 out[c, i, j] = (val - mean) / (std + eps)
     return out
 
+def transform(
+        data: np.ndarray,
+        means: np.ndarray,
+        stds: np.ndarray,
+        sl_scale_factors: np.ndarray,
+        epsilons: np.ndarray
+    ) -> np.ndarray:
+    """
+    Implements signum log transform. Drop-in replacement for
+    `fast_transform` method above.
+
+    Args:
+        data: Numpy array of shape C, H, W
+        means: Numpy array of shape C. Mean per channel.
+        stds: Numpy array of shape C. Standard deviation per channel.
+        sl_scale_factors: Numpy array of shape C. Signum-log scale factors.
+        epsilons: Numpy array of shape C. Constant to avoid zero division.
+
+    Returns:
+        Numpy array of shape C, H, W.
+    """
+    means = means.reshape(*means.shape, 1, 1)
+    stds = stds.reshape(*stds.shape, 1, 1)
+    sl_scale_factors = sl_scale_factors.reshape(*sl_scale_factors.shape, 1, 1)
+    epsilons = epsilons.reshape(*epsilons.shape, 1, 1)
+
+    data = data * sl_scale_factors
+    data = np.where(data >= 0, np.log1p(data), -np.log1p(-data))
+    data = (data - means) / (stds + epsilons)
+
+    return data
 
 @njit(parallel=True)
 def inverse_fast_transform(data, means, stds, sl_scale_factors, epsilons):
+    """
+    Implements inverse signum log transform using numba for speed
+
+    Args:
+        data: Numpy array of shape C, H, W
+        means: Numpy array of shape C. Mean per channel.
+        stds: Numpy array of shape C. Standard deviation per channel.
+        sl_scale_factors: Numpy array of shape C. Signum-log scale factors.
+        epsilons: Numpy array of shape C. Constant to avoid zero division.
+
+    Returns:
+        Numpy array of shape C, H, W.
+    """
     C, H, W = data.shape
     out = np.empty((C, H, W), dtype=np.float32)
 
@@ -71,6 +130,19 @@ def inverse_fast_transform(data, means, stds, sl_scale_factors, epsilons):
 
 
 def inverse_transform_single_channel(data, mean, std, sl_scale_factor, epsilon):
+    """
+    Implements inverse signum log transform.
+
+    Args:
+        data: Numpy array of shape C, H, W
+        means: Numpy array of shape C. Mean per channel.
+        stds: Numpy array of shape C. Standard deviation per channel.
+        sl_scale_factors: Numpy array of shape C. Signum-log scale factors.
+        epsilons: Numpy array of shape C. Constant to avoid zero division.
+
+    Returns:
+        Numpy array of shape C, H, W.
+    """
     data = data * (std + epsilon) + mean
 
     data = np.where(data >= 0, np.expm1(data), -np.expm1(-data))
@@ -407,10 +479,12 @@ class HelioNetCDFDataset(Dataset):
             Numpy array of shape (C, H, W).
         """
         self.logger.info(f"Reading file {filepath}.")
+        
         with xr.open_dataset(
-            filepath, engine="h5netcdf", chunks=None, cache=False
+            filepath, engine="h5netcdf", chunks=None, cache=False,
         ) as ds:
-            data = ds[channels].to_array().values
+            data = ds[channels].to_array().load().to_numpy()
+        
         return data
 
     @cache
@@ -446,5 +520,5 @@ class HelioNetCDFDataset(Dataset):
             )
 
         means, stds, epsilons, sl_scale_factors = self.transformation_inputs()
-        result_np = fast_transform(data, means, stds, sl_scale_factors, epsilons)
+        result_np = transform(data, means, stds, sl_scale_factors, epsilons)
         return result_np
