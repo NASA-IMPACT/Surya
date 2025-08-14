@@ -201,7 +201,6 @@ class StandardScaler(Transformation):
         return self.transform(data)
 
     def inverse_transform(self, data):
-
         if isinstance(data, torch.Tensor):
             return data * (
                 torch.Tensor([self.std]).to(data.device)

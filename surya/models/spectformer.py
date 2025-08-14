@@ -78,7 +78,6 @@ class SpectralGatingNetwork(nn.Module):
 
 
 class BlockSpectralGating(nn.Module):
-
     def __init__(
         self,
         dim,
@@ -109,7 +108,6 @@ class BlockSpectralGating(nn.Module):
 
 
 class BlockAttention(nn.Module):
-
     def __init__(
         self,
         dim,
@@ -159,9 +157,14 @@ class BlockAttention(nn.Module):
 
     def forward(self, x: torch.Tensor, c: torch.Tensor) -> torch.Tensor:
         if self.adaLN_modulation is not None:
-            shift_mha, scale_mha, gate_mha, shift_mlp, scale_mlp, gate_mlp = (
-                self.adaLN_modulation(c).chunk(6, dim=2)
-            )
+            (
+                shift_mha,
+                scale_mha,
+                gate_mha,
+                shift_mlp,
+                scale_mlp,
+                gate_mlp,
+            ) = self.adaLN_modulation(c).chunk(6, dim=2)
         else:
             shift_mha, scale_mha, gate_mha, shift_mlp, scale_mlp, gate_mlp = 6 * (1.0,)
 
@@ -178,7 +181,6 @@ class BlockAttention(nn.Module):
 
 
 class SpectFormer(nn.Module):
-
     def __init__(
         self,
         grid_size: int = 224 // 16,
@@ -231,7 +233,9 @@ class SpectFormer(nn.Module):
             _logger.info(f"Using uniform droppath with expect rate {drop_path_rate}.")
             dpr = [drop_path_rate for _ in range(depth)]
         else:
-            _logger.info(f"Using linear droppath with expect rate {drop_path_rate * 0.5}.")
+            _logger.info(
+                f"Using linear droppath with expect rate {drop_path_rate * 0.5}."
+            )
             dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
 
         self.blocks_spectral_gating = nn.ModuleList()
