@@ -7,6 +7,7 @@ from surya.datasets.transformations import Transformation, StandardScaler
 from surya.utils.config import DataConfig
 from surya.utils.misc import class_from_name, view_as_windows
 
+
 def custom_collate_fn(batch):
     """
     Custom collate function for handling batches of data and metadata in a PyTorch DataLoader.
@@ -65,6 +66,7 @@ def custom_collate_fn(batch):
             collated_metadata = metadata_batch
 
     return collated_data, collated_metadata
+
 
 def calc_num_windows(raw_size: int, win_size: int, stride: int) -> int:
     return (raw_size - win_size) // stride + 1

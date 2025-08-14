@@ -230,20 +230,24 @@ class AttentionLS(nn.Module):
 
         if self.nglo > 0:
             attn_cls = attn[:, :, :, -self.nglo :]
-            out += attn_cls.matmul(v_cls) # Changed. Was `.mul` instead of `.matmul`. (JWS)
+            out += attn_cls.matmul(
+                v_cls
+            )  # Changed. Was `.mul` instead of `.matmul`. (JWS)
 
             # b x h x 1 x lw
             cls_inner = q_cls.matmul(k_cls.transpose(-1, -2))
-            cls_dots = q_cls.matmul(k.transpose(-1, -2)) # Changed. Was `out` instead of `k`. (JWS)
+            cls_dots = q_cls.matmul(
+                k.transpose(-1, -2)
+            )  # Changed. Was `out` instead of `k`. (JWS)
             cls_dots = torch.cat([cls_inner, cls_dots], dim=-1)
 
             # cls_dots = cls_dots.softmax(dim=-1, dtype=torch.float32).to(x)
             cls_dots = cls_dots.softmax(dim=-1).to(
                 x
-            ) # Changed when experimenting with mixed precision (Johannes S.)
+            )  # Changed when experimenting with mixed precision (Johannes S.)
             cls_next = cls_dots[:, :, :, self.nglo :].matmul(
                 v
-            ) # the post_cls variant # Changed. Was `out` instead of `v`. (JWS)
+            )  # the post_cls variant # Changed. Was `out` instead of `v`. (JWS)
             cls_next += cls_dots[:, :, :, : self.nglo].matmul(v_cls)
 
             out = torch.cat([cls_next, out], dim=2)

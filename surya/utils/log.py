@@ -7,7 +7,6 @@ from packaging.version import Version
 import wandb
 from typing import Dict, Optional, Any
 
-from termcolor import colored
 
 if Version(wandb.__version__) < Version("0.20.0"):
     WANDB_USE_SYNC = True

@@ -14,8 +14,6 @@ from functools import cache
 
 from numba import njit, prange
 
-import hdf5plugin  # Enables LZ4 decompression via h5py - does not interfere with gzip
-
 
 @njit(parallel=True)
 def fast_transform(data, means, stds, sl_scale_factors, epsilons):
@@ -41,6 +39,7 @@ def fast_transform(data, means, stds, sl_scale_factors, epsilons):
                 out[c, i, j] = (val - mean) / (std + eps)
     return out
 
+
 @njit(parallel=True)
 def inverse_fast_transform(data, means, stds, sl_scale_factors, epsilons):
     C, H, W = data.shape
@@ -51,11 +50,11 @@ def inverse_fast_transform(data, means, stds, sl_scale_factors, epsilons):
         std = stds[c]
         eps = epsilons[c]
         sl_scale_factor = sl_scale_factors[c]
-        
+
         for i in range(H):
             for j in range(W):
                 val = data[c, i, j]
-                val = val * (std+eps) + mean
+                val = val * (std + eps) + mean
 
                 if val >= 0:
                     val = np.expm1(val)
@@ -68,8 +67,9 @@ def inverse_fast_transform(data, means, stds, sl_scale_factors, epsilons):
 
     return out
 
+
 def inverse_transform_single_channel(data, mean, std, sl_scale_factor, epsilon):
-    data = data * (std+epsilon) + mean
+    data = data * (std + epsilon) + mean
 
     data = np.where(data >= 0, np.expm1(data), -np.expm1(-data))
 
@@ -77,43 +77,24 @@ def inverse_transform_single_channel(data, mean, std, sl_scale_factor, epsilon):
 
     return data
 
-    #H, W = data.shape
-    #out = np.empty((H, W), dtype=np.float32)
-#
-    #for i in range(H):
-    #    for j in range(W):
-    #        val = data[i, j]
-    #        val = val * (std+epsilon) + mean
-#
-    #        if val >= 0:
-    #            val = np.expm1(val)
-    #        else:
-    #            val = -np.expm1(-val)
-#
-    #        val = val / sl_scale_factor
-#
-    #        out[i, j] = val
-#
-    #return out
-
 
 class RandomChannelMaskerTransform:
-    def __init__(self, num_channels, num_mask_aia_channels, phase, drop_hmi_probablity):
+    def __init__(
+        self, num_channels, num_mask_aia_channels, phase, drop_hmi_probability
+    ):
         """
         Initialize the RandomChannelMaskerTransform class as a transform.
 
         Args:
-        - num_channels: Total number of channels in the input (3rd dimension of the tensor).
+        - num_channels: Total number of channels in the input (3rd dimension of
+          the tensor).
         - num_mask_aia_channels: Number of channels to randomly mask.
         """
         self.num_channels = num_channels
         self.num_mask_aia_channels = num_mask_aia_channels
-        self.drop_hmi_probablity = drop_hmi_probablity
-
-        # print(f'[{phase}] Using Random Channel Masker with num_mask_aia_channels = {self.num_mask_aia_channels}')
+        self.drop_hmi_probability = drop_hmi_probability
 
     def __call__(self, input_tensor):
-
         C, T, H, W = input_tensor.shape  # Unpacking the correct 5 dimensions
 
         # Randomly select channels to mask
@@ -126,7 +107,7 @@ class RandomChannelMaskerTransform:
         # Apply the mask in-place for memory efficiency
         masked_tensor = input_tensor * mask  # Modify input_tensor directly
 
-        if self.drop_hmi_probablity > random.random():
+        if self.drop_hmi_probability > random.random():
             masked_tensor[-1, ...] = 0
 
         return masked_tensor
@@ -137,7 +118,8 @@ class HelioNetCDFDataset(Dataset):
     PyTorch dataset to load a curated dataset from the NASA Solar Dynamics
     Observatory (SDO) mission stored as NetCDF files, with handling for variable timesteps.
 
-    Internally maintains two databases. The first is`self.index`. This takes the form
+    Internally maintains two databases. The first is `self.index`. This takes the
+    form
                                                                         path  present
         timestep
         2011-01-01 00:00:00  /lustre/fs0/scratch/shared/data/2011/01/Arka_2...        1
@@ -145,10 +127,11 @@ class HelioNetCDFDataset(Dataset):
         ...                                                                ...      ...
         2012-11-30 23:48:00  /lustre/fs0/scratch/shared/data/2012/11/Arka_2...        1
 
-    The second is `self.valid_indices`. This is simply a list of timesteps -- entries in the
-    index of `self.index` -- which define valid samples. A sample is valid when all timestamps
-    that can be reached by entris in time_delta_input_minutes and time_delta_target_minutes
-    can be reached from it are present.
+    The second is `self.valid_indices`. This is simply a list of timesteps -- entries
+    in the index of `self.index` -- which define valid samples. A sample is valid
+    when all timestamps that can be reached by entris in
+    time_delta_input_minutes and time_delta_target_minutes can be reached from it
+    are present.
     """
 
     def __init__(
@@ -159,19 +142,19 @@ class HelioNetCDFDataset(Dataset):
         n_input_timestamps: int,
         rollout_steps: int,
         scalers=None,
-        num_mask_aia_channels: int=0,
-        drop_hmi_probablity: float=0.,
+        num_mask_aia_channels: int = 0,
+        drop_hmi_probability: float = 0.0,
         use_latitude_in_learned_flow=False,
         channels: list[str] | None = None,
         phase="train",
         pooling: int | None = None,
-        random_vert_flip: bool = False
+        random_vert_flip: bool = False,
     ):
         self.scalers = scalers
         self.phase = phase
         self.channels = channels
         self.num_mask_aia_channels = num_mask_aia_channels
-        self.drop_hmi_probablity = drop_hmi_probablity
+        self.drop_hmi_probability = drop_hmi_probability
         self.n_input_timestamps = n_input_timestamps
         self.rollout_steps = rollout_steps
         self.use_latitude_in_learned_flow = use_latitude_in_learned_flow
@@ -196,7 +179,7 @@ class HelioNetCDFDataset(Dataset):
             num_channels=self.in_channels,
             num_mask_aia_channels=self.num_mask_aia_channels,
             phase=self.phase,
-            drop_hmi_probablity=self.drop_hmi_probablity,
+            drop_hmi_probability=self.drop_hmi_probability,
         )
 
         # Convert time delta to numpy timedelta64
@@ -353,7 +336,7 @@ class HelioNetCDFDataset(Dataset):
         timestamps_input = required_timesteps[: -self.rollout_steps - 1]
         timestamps_targets = required_timesteps[-self.rollout_steps - 1 :]
 
-        if self.num_mask_aia_channels > 0 or self.drop_hmi_probablity:
+        if self.num_mask_aia_channels > 0 or self.drop_hmi_probability:
             # assert 0 < self.num_mask_aia_channels < self.in_channels, \
             #     f'num_mask_aia_channels = {self.num_mask_aia_channels} should lie between 0 and {self.in_channels}'
 
@@ -457,9 +440,7 @@ class HelioNetCDFDataset(Dataset):
 
         if self.pooling > 1:
             data = skimage.measure.block_reduce(
-                data,
-                block_size=(1, self.pooling, self.pooling),
-                func=np.mean
+                data, block_size=(1, self.pooling, self.pooling), func=np.mean
             )
 
         means, stds, epsilons, sl_scale_factors = self.transformation_inputs()

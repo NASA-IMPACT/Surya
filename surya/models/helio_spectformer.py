@@ -117,7 +117,7 @@ class HelioSpectFormer(nn.Module):
                     embed_dim=embed_dim,
                     drop_rate=drop_rate,
                 )
-                if not self.finetune:               
+                if not self.finetune:
                     self.unembed = PerceiverDecoder(
                         embed_dim=embed_dim,
                         patch_size=patch_size,
@@ -274,10 +274,9 @@ class HelioSpectFormer(nn.Module):
 
         # pass the time series through the encoder
         tokens = self.backbone(tokens)
-        
+
         if self.finetune:
             return tokens
-
 
         # Unembed the tokens
         # BE L D -> BE C H W
