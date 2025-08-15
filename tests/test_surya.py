@@ -148,7 +148,7 @@ def dataloader(dataset) -> DataLoader:
         dataset,
         shuffle=False,
         batch_size=1,
-        num_workers=0,
+        num_workers=2,
         prefetch_factor=None,
         pin_memory=True,
         drop_last=False,
