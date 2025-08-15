@@ -8,10 +8,17 @@ Clone and install the environment (requires [uv](https://docs.astral.sh/uv/) pac
 ```sh
 git clone git@github.com:NASA-IMPACT/Surya.git
 cd Surya
+```
 
+UV installation (optional) and environment creation 
+
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh  
+source ~/.bashrc
 mkdir ./.uvcache
 
 UV_CACHE_DIR=./.uvcache TMPDIR=./.uvcache uv sync
+source .venv/bin/activate
 ```
 
 Run an end to end test via `python -m pytest -s -o log_cli=true tests/test_surya.py`. The script will run the Surya to generate two-hour ahead forecasts for 2014-01-07 and generate a file `surya_model_validation.png` which should look as below. Moreover, it will test the performance of the model against threshold values as below:

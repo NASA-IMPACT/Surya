@@ -3,7 +3,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 *.pth
-
+*.pt
 # C extensions
 *.so
 
@@ -209,3 +209,4 @@ __marimo__/
 wandb/
 assets/
 logs/
+data/
