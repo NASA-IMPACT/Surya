@@ -9,7 +9,7 @@ Clone and install the environment (requires [uv](https://docs.astral.sh/uv/) pac
 git clone git@github.com:NASA-IMPACT/Surya.git
 cd Surya
 
-mkdir ./uvcache
+mkdir ./.uvcache
 
 UV_CACHE_DIR=./.uvcache TMPDIR=./.uvcache uv sync
 ```
