@@ -1,0 +1,162 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "surya"
+version = "0.1.0"
+description = "Implementation of the Surya Foundation Model and Downstream Tasks for Heliophysics"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Surya Team" }]
+maintainers = [{ name = "Surya Team" }]
+keywords = [
+  "heliophysics","solar dynamics","foundation model","deep learning",
+  "pytorch","transformer","spectformer","solar wind","forecasting"
+]
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+requires-python = ">=3.11"
+dependencies = [
+  # Core PyTorch deps (resolved from CUDA index via [tool.uv.sources] below)
+  "torch>=2.6.0",
+  "torchvision>=0.21.0",
+  "torchaudio>=2.6.0",
+  # Neural network utilities
+  "einops>=0.4.0",
+  "timm>=0.9.0",
+  # Data processing and I/O
+  "hdf5plugin>=3.0.0",
+  "numpy>=1.21.0",
+  "pandas>=1.3.0",
+  "xarray>=0.20.0",
+  # Configuration and utilities
+  "packaging>=21.0",
+  "pyyaml>=5.4.0",
+  # Numerical acceleration
+  "numba>=0.56.0",
+  # Image processing
+  "scikit-image>=0.19.0",
+  # Solar physics specific
+  "sunpy>=4.0.0",
+  # Model hosting and downloading
+  "huggingface-hub>=0.10.0",
+  "peft>=0.4.0",
+  "wandb>=0.15.0",
+  # Visualization
+  "matplotlib>=3.5.0",
+  "h5netcdf>=1.6.4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0.0","pytest-cov>=3.0.0","black>=24.0.0","isort>=5.10.0",
+  "flake8>=4.0.0","mypy>=1.8.0","pre-commit>=2.17.0",
+]
+viz = ["seaborn>=0.11.0","plotly>=5.0.0"]
+notebook = ["jupyter>=1.0.0","ipykernel>=6.0.0","ipywidgets>=7.6.0"]
+docs = ["sphinx>=4.0.0","sphinx-rtd-theme>=1.0.0","sphinx-autodoc-typehints>=1.12.0","myst-parser>=0.17.0"]
+all = ["surya[dev,viz,notebook,docs]"]
+
+[project.urls]
+Repository = "https://github.com/NASA-IMPACT/Surya"
+Issues = "https://github.com/NASA-IMPACT/Surya/issues"
+
+[project.scripts]
+surya-test = "surya.utils.misc:run_tests"
+
+[tool.hatchling.build.targets.sdist]
+include = [
+  "/surya","/tests","/downstream_examples","/assets",
+  "README.md","LICENSE",
+]
+
+[tool.hatchling.build.targets.wheel]
+packages = ["surya"]
+
+# ---------- Code style / type checking ----------
+[tool.black]
+line-length = 100
+target-version = ['py311','py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs|\.git|\.hg|\.mypy_cache|\.tox|\.venv|_build|buck-out|build|dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+  "numba.*","xarray.*","sunpy.*","astropy.*","matplotlib.*",
+  "seaborn.*","plotly.*","hdf5plugin.*","skimage.*","einops.*",
+  "huggingface_hub.*","mpi4py.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["--strict-markers","--strict-config","--verbose","--tb=short"]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "gpu: marks tests that require GPU (deselect with '-m \"not gpu\"')",
+]
+filterwarnings = ["ignore::DeprecationWarning","ignore::PendingDeprecationWarning"]
+
+[tool.coverage.run]
+source = ["surya"]
+omit = ["*/tests/*","*/test_*.py","*/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover","def __repr__","if self.debug:","if settings.DEBUG",
+  "raise AssertionError","raise NotImplementedError","if 0:",
+  "if __name__ == .__main__.:","class .*\\bProtocol\\):","@(abc\\.)?abstractmethod",
+]
+
+# ---------- uv: PyTorch CUDA wheels ----------
+# Define the CUDA 12.6 wheel index and pin torch packages to it.
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url  = "https://download.pytorch.org/whl/cu126"
+explicit = true   # <-- critical
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+torchvision = { index = "pytorch-cu126" }
+torchaudio = { index = "pytorch-cu126" }
