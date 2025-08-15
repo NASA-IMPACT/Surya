@@ -83,7 +83,7 @@ def transform(
     epsilons = epsilons.reshape(*epsilons.shape, 1, 1)
 
     data = data * sl_scale_factors
-    data = np.where(data >= 0, np.log1p(data), -np.log1p(-data))
+    data = np.sign(data) * np.log1p(np.abs(data))
     data = (data - means) / (stds + epsilons)
 
     return data
@@ -145,7 +145,7 @@ def inverse_transform_single_channel(data, mean, std, sl_scale_factor, epsilon):
     """
     data = data * (std + epsilon) + mean
 
-    data = np.where(data >= 0, np.expm1(data), -np.expm1(-data))
+    data = np.sign(data) * np.expm1(np.abs(data))
 
     data = data / sl_scale_factor
 
