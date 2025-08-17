@@ -307,7 +307,7 @@ def test_surya_20140107(model: HelioSpectFormer, dataloader: DataLoader, caplog)
             vmin = max(vmin, sdo_image.data.min())
             vmax = min(vmax, np.quantile(sdo_image.data, 0.99))
 
-    plt_kwargs = {"vmin": vmin, "vmax": vmax, "cmap": sunpy_cm.cmlist["sdoaia94"]}
+    plt_kwargs = {"vmin": vmin, "vmax": vmax, "cmap": sunpy_cm.cmlist["sdoaia94"], "origin" : "lower"}
     fig, ax = plt.subplots(8, 4, figsize=(16, 32))
     for j in range(8):
         for i in range(4):
