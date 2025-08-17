@@ -1,0 +1,92 @@
+job_id: solar-wind
+data:
+  # Use this to point at the paths of HelioFM data indices
+  train_data_path: /lustre/fs0/scratch/shared/data/csv_files/dgx_train_index_surya_1_0.csv
+  valid_data_path: /lustre/fs0/scratch/shared/data/csv_files/dgx_valid_index_surya_1_0.csv
+  channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
+  time_delta_input_minutes: [0]
+  time_delta_target_minutes: +60
+  n_input_timestamps: 1 # Should be equal to length of time_delta_input_minutes
+  batch_size: 1
+  num_data_workers: 8
+  prefetch_factor: 2
+  scalers_path: "assets/scale_signum_log_factor1e-02_2011_2020.yaml"
+  #### Put your donwnstream (DS) specific parameters below this line
+  solarwind_index: "assets/Surya-bench-solarwind/train_val_appended.csv"
+
+model:
+  model_type: spectformer # Options: spectformer
+  # Spectformer options
+  img_size: 4096
+  patch_size: 16
+  in_channels: 13
+  time_embedding:
+    type: linear      # Options: linear, fourier, perceiver
+    n_queries: null   # Integer for perceiver; otherwise null
+    time_dim: 1       # Integer for linear and fourier; otherwise null
+  unet_embed_dim: null
+  unet_blocks: null
+  unet_concat_activations: false # Whether to concatenate activations (UNet) or not (Autoencoder/bottleneck) in the decoder
+  embed_dim: 1280
+  depth: 10
+  spectral_blocks: 2
+  num_heads: 16
+  mlp_ratio: 4.0
+  rpe: false
+  drop_rate: 0.0
+  window_size: 2
+  dp_rank: 4
+  learned_flow: false
+  epochs_to_learn_flow: 0 # Start by training flow model only before freezing
+  init_weights: false
+  checkpoint_layers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  ensemble: null
+  finetune: true
+  nglo: 1
+  global_average_pooling: False
+  global_max_pooling: False
+  attention_pooling: False
+  transformer_pooling: False
+  global_class_token: True
+  penultimate_linear_layer: True
+  freeze_backbone: false
+  dropout: 0.2
+  use_lora: true
+  lora_config:
+    r: 8  # LoRA rank
+    lora_alpha: 8  # LoRA alpha parameter
+    target_modules: ['q_proj', 'v_proj', 'k_proj', 'out_proj', 'fc1', 'fc2']  # Target modules for LoRA
+    lora_dropout: 0.1
+    bias: 'none'
+    # task_type: 'SEQ_CLS'
+
+metrics:
+  # metrics for AR segmentation
+  bce:
+    pos_weight: 2.0
+
+optimizer:
+  warm_up_steps: 0 #2000
+  max_epochs: 2
+  learning_rate: 0.001
+  min_lr: 0.000001
+use_latitude_in_learned_flow: false
+loss_weights: [] # [] or list of weights per channel
+rollout_steps: 0
+num_mask_aia_channels: 0
+drop_hmi_probability: 0.0
+validate_after_epoch: 1
+wandb_log_train_after: 5 # This should be less than iters_per_epoch_train
+wandb_project: "helio-fm" # Typical choices: "helio-fm", "spectformer_with_metrics"
+visualization_samples: 3
+save_wt_after_iter: 1000
+path_experiment: checkpoints
+iters_per_epoch_train: 10000
+iters_per_epoch_valid: 200
+iters_grad_accum: 1
+dtype: float32
+parallelism: "ddp" # Valid options: "ddp" and "fsdp"
+
+# Finetuning config fields
+pretrained_path: /lustre/fs0/scratch/johannes/surya_1.0/checkpoints/surya_1.0/weights/epoch_100_loss_0.197.pth
+# freeze_backbone: False
