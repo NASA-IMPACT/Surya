@@ -1,6 +1,6 @@
-# 🌞 Surya: Foundation Model for Heliophysics
-
 <div align="center">
+
+# Surya: Foundation Model for Heliophysics
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/release/python-3110/)
@@ -15,18 +15,19 @@
 
 ## 📖 Overview
 
-**Surya** (Sanskrit for "Sun") is a 366M parameter foundation model designed to learn general-purpose solar representations from multi-instrument Solar Dynamics Observatory (SDO) observations. Named after the Sanskrit word for Sun, Surya represents a breakthrough in space weather prediction and solar physics research.
+**Surya** (Sanskrit for "Sun") is a 366M-parameter foundation model for heliophysics, trained on full-resolution multi-instrument SDO observations (AIA & HMI). It learns general-purpose solar representations through spatiotemporal transformers, enabling state-of-the-art performance in solar flare forecasting, active region segmentation, solar wind prediction, and EUV spectra modeling.
 
-### 🔬 Key Features
 
-- **🎯 Multi-instrument Learning**: Trained on 13 channels from SDO's AIA (8 channels) and HMI (5 channels) instruments
-- **📐 Full Resolution**: Native 4096×4096 pixel resolution with 12-minute cadence
-- **🧠 Novel Architecture**: Spatiotemporal transformer with spectral gating and long-short range attention
-- **⚡ Zero-shot Capabilities**: Forecasts solar dynamics and flare events without additional training
-- **🔧 Versatile Fine-tuning**: Parameter-efficient LoRA adaptation for diverse downstream tasks
-- **🌍 Real-world Impact**: Applications in space weather prediction, satellite operations, and power grid protection
+### Key Features
 
-### 🎯 What Makes Surya Special?
+- **Multi-instrument Learning**: Trained on 13 channels from SDO's AIA (8 channels) and HMI (5 channels) instruments
+- **Full Resolution**: Native 4096×4096 pixel resolution with 12-minute cadence
+- **Novel Architecture**: Spatiotemporal transformer with spectral gating and long-short range attention
+- **Zero-shot Capabilities**: Forecasts solar dynamics and flare events without additional training
+- **Versatile Fine-tuning**: Parameter-efficient LoRA adaptation for diverse downstream tasks
+- **Real-world Impact**: Applications in space weather prediction, satellite operations, and power grid protection
+
+### What Makes Surya Special?
 
 Unlike traditional task-specific models, Surya learns physics-aware representations that generalize across multiple solar phenomena:
 
@@ -137,14 +138,14 @@ torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 
 ## 📥 Data and Model Access
 
-### 🤗 Pretrained Models
+### Pretrained Models
 
-The Surya foundation model and datasets are available on Hugging Face:
+The Surya foundation model and datasets are available on HuggingFace 🤗 :
 
 - **Model Repository**: [`nasa-ibm-ai4science/Surya-1.0`](https://huggingface.co/nasa-ibm-ai4science/Surya-1.0)
 - **Dataset Repository**: [`nasa-ibm-ai4science/SDO_training`](https://huggingface.co/datasets/nasa-ibm-ai4science/SDO_training)
 
-### 📊 SDO Data Download
+### SDO Data Download
 
 For downstream applications, download the preprocessed SDO data:
 
@@ -164,7 +165,7 @@ This will:
 
 Surya employs a novel spatiotemporal transformer architecture optimized for solar dynamics:
 
-### 🏗️ Core Components
+### Core Components
 
 1. **Spectral Gating Blocks** (2 layers)
    - Frequency-domain filtering with learnable complex weights
@@ -180,7 +181,7 @@ Surya employs a novel spatiotemporal transformer architecture optimized for sola
    - Lightweight projection back to physical domain
    - Maintains spatial structure and channel relationships
 
-### 📈 Training Strategy
+### Training Strategy
 
 - **Phase 1**: One-step ahead forecasting (160k steps, 128 GPUs)
 - **Phase 2**: Autoregressive rollout tuning (2-5 hour horizons)
@@ -188,7 +189,7 @@ Surya employs a novel spatiotemporal transformer architecture optimized for sola
 - **Data**: 2011-2019 SDO observations (~257TB processed)
 
 
-### 🛠️ Data Processing Pipeline
+### Data Processing Pipeline
 
 Our preprocessing ensures ML-ready, physics-consistent data:
 
@@ -205,15 +206,6 @@ Our preprocessing ensures ML-ready, physics-consistent data:
 | Active Region Segmentation | IoU | **0.768** | 0.688 (UNet) | 12% |  
 | Solar Wind Prediction | RMSE | **75.92** | 93.76 (ResNet50) | 19% |
 | EUV Spectra Modeling | MAPE | **1.48%** | 1.68% (AlexNet) | 12% |
-
-## 🤝 Contributing
-
-We welcome contributions to the Surya project! Please see our contribution guidelines and feel free to:
-
-- 🐛 Report bugs and issues
-- 💡 Suggest new features or applications
-- 🔧 Submit pull requests for improvements
-- 📖 Improve documentation and examples
 
 ## 📄 Citation
 
@@ -232,8 +224,14 @@ If you use Surya in your research, please cite our paper:
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
+## 🤝 Contributing
 
----
+We welcome contributions to the Surya repository! Please see our contribution guidelines and feel free to:
+
+- 🐛 Report bugs and issues
+- 💡 Suggest new features or applications
+- 🔧 Submit pull requests for improvements
+- 📖 Improve documentation and examples
 
 ## 👥 Authors
 
@@ -257,10 +255,3 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 <sup>14</sup>NVIDIA Corp., Santa Clara, USA; Caltech, Pasadena, USA  
 <sup>15</sup>NASA Science Mission Directorate
 
----
-
-<div align="center">
-
-*Built with ❤️ by the NASA and IBM Team*
-
-</div>
