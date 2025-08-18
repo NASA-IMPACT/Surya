@@ -152,6 +152,10 @@ exclude_lines = [
 ]
 
 # ---------- uv: PyTorch CUDA wheels ----------
+
+[tool.uv]
+cache-dir = "./.uvcache"
+
 # Define the CUDA 12.6 wheel index and pin torch packages to it.
 [[tool.uv.index]]
 name = "pytorch-cu126"
