@@ -10,7 +10,7 @@ This repository contains downstream finetuning code related to six key tasks tha
 
 ## Download SDO Data
 
-The data is located at [Sasa-ibm-ai4science/SDO_training](https://huggingface.co/datasets/nasa-ibm-ai4science/SDO_training)
+The data is located at [nasa-ibm-ai4science/SDO_training](https://huggingface.co/datasets/nasa-ibm-ai4science/SDO_training)
 
 Downloads and generates csv files. The `data_path` is defined in the main function
 
@@ -23,7 +23,7 @@ Downloads and generates csv files. The `data_path` is defined in the main functi
 ### Run the python file to download data
 
 ```bash
-uv run python download_data.py
+python download_data.py
 ```
 
 The structure of the downloaded file should give the following structure:

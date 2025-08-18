@@ -1,6 +1,6 @@
 <div align="center">
 
-# Surya: Foundation Model for Heliophysics
+# ☀️ Surya: Foundation Model for Heliophysics ☀️
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/release/python-3110/)
@@ -11,7 +11,10 @@
 
 </div>
 
----
+<p align="center">
+    <img src="https://i.imgur.com/waxVImv.png" alt="Oryx Prithvi-EO-2.0">
+</p>
+
 
 ## 📖 Overview
 
@@ -233,7 +236,7 @@ We welcome contributions to the Surya repository! Please see our contribution gu
 
 ## 👥 Authors
 
-**Sujit Roy**<sup>1,2</sup>, **Johannes Schmude**<sup>5</sup>, **Rohit Lal**<sup>1</sup>, **Vishal Gaur**<sup>1</sup>, **Marcus Freitag**<sup>5</sup>, **Julian Kuehnert**<sup>5</sup>, **Theodore van Kessel**<sup>5</sup>, **Dinesha V. Hegde**<sup>3,4</sup>, **Andrés Muñoz-Jaramillo**<sup>7</sup>, **Johannes Jakubik**<sup>5</sup>, **Etienne Vos**<sup>5</sup>, **Kshitiz Mandal**<sup>1</sup>, **Ata Akbari Asanjan**<sup>13</sup>, **Joao Lucas de Sousa Almeida**<sup>5</sup>, **Amy Lin**<sup>1</sup>, **Talwinder Singh**<sup>6</sup>, **Kang Yang**<sup>6</sup>, **Chetraj Pandey**<sup>6</sup>, **Jinsu Hong**<sup>6</sup>, **Berkay Aydin**<sup>6</sup>, **Thorsten Kurth**<sup>14</sup>, **Ryan McGranaghan**<sup>8</sup>, **Spiridon Kasapis**<sup>9</sup>, **Vishal Upendran**<sup>10</sup>, **Shah Bahauddin**<sup>11</sup>, **Daniel da Silva**<sup>12</sup>, **Nikolai V. Pogorelov**<sup>3,4</sup>, **Campbell Watson**<sup>5</sup>, **Manil Maskey**<sup>2</sup>, **Madhulika Guhathakurta**<sup>15</sup>, **Juan Bernabe-Moreno**<sup>5</sup>, **Rahul Ramachandran**<sup>2</sup>
+**[Sujit Roy](https://www.linkedin.com/in/sujit-roy01/)**<sup>1,2</sup>, **[Johannes Schmude](https://www.linkedin.com/in/johannes-schmude-202566125/)**<sup>5</sup>, **[Rohit Lal](https://www.linkedin.com/in/rohit-lal/)**<sup>1</sup>, **[Vishal Gaur](https://www.linkedin.com/in/vishal-gaur/)**<sup>1</sup>, **[Marcus Freitag](https://scholar.google.com/citations?user=1WR9X28AAAAJ&hl=en)**<sup>5</sup>, **[Julian Kuehnert](https://www.linkedin.com/in/juliankuehnert/)**<sup>5</sup>, **[Theodore van Kessel](https://www.linkedin.com/in/ted-van-kessel-41b62511/)**<sup>5</sup>, **[Dinesha V. Hegde](https://www.linkedin.com/in/dinesh-hegde-936905157/)**<sup>3,4</sup>, **[Andrés Muñoz-Jaramillo](https://www.linkedin.com/in/amunozj/)**<sup>7</sup>, **[Johannes Jakubik](https://www.linkedin.com/in/johannes-jakubik-8763ba167/)**<sup>5</sup>, **[Etienne Vos](https://www.linkedin.com/in/etiennevos/)**<sup>5</sup>, **[Kshitiz Mandal](https://www.linkedin.com/in/kshitizmandal/)**<sup>1</sup>, **[Ata Akbari Asanjan](https://www.linkedin.com/in/ataakbariasanjan/)**<sup>13</sup>, **[Joao Lucas de Sousa Almeida](https://www.linkedin.com/in/jo%C3%A3o-lucas-de-sousa-almeida-a08b9255/)**<sup>5</sup>, **[Amy Lin](https://github.com/aes-lin)**<sup>1</sup>, **[Talwinder Singh](https://www.linkedin.com/in/talwinder-singh-dhami/)**<sup>6</sup>, **Kang Yang**<sup>6</sup>, **[Chetraj Pandey](https://www.linkedin.com/in/chetraj-pandey-671388125/)**<sup>6</sup>, **Jinsu Hong**<sup>6</sup>, **[Berkay Aydin](https://www.linkedin.com/in/berkay-aydin/)**<sup>6</sup>, **[Thorsten Kurth](https://www.linkedin.com/in/thorstenkurth/)**<sup>14</sup>, **[Ryan McGranaghan](https://www.linkedin.com/in/ryanmcgranaghan/)**<sup>8</sup>, **[Spiridon Kasapis](https://www.linkedin.com/in/spyroskasapis/)**<sup>9</sup>, **[Vishal Upendran](https://www.linkedin.com/in/vishal-upendran1995/)**<sup>10</sup>, **[Shah Bahauddin](https://www.linkedin.com/in/shahbahauddin/)**<sup>11</sup>, **[Daniel da Silva](https://www.linkedin.com/in/daniel-da-silva-8a836b20b/)**<sup>12</sup>, **[Nikolai V. Pogorelov](https://www.linkedin.com/in/nikolai-pogorelov-56383b42/)**<sup>3,4</sup>, **[Campbell Watson](https://www.linkedin.com/in/campbell-watson-819101100/)**<sup>5</sup>, **[Manil Maskey](https://www.linkedin.com/in/manilmaskey/)**<sup>2</sup>, **[Madhulika Guhathakurta](https://www.linkedin.com/in/mguhathakurta/)**<sup>15</sup>, **[Juan Bernabe-Moreno](https://www.linkedin.com/in/bernabemoreno/)**<sup>5</sup>, **[Rahul Ramachandran](https://www.linkedin.com/in/rramachandran05/)**<sup>2</sup>
 
 ### Affiliations
 
