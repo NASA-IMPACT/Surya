@@ -103,8 +103,6 @@ python3 download_data.sh
 torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 ```
 
-**Performance**: TSS=0.436, HSS=0.522, F1=0.561 (outperforms AlexNet and ResNet50)
-
 ### 2. Active Region Segmentation
 
 Segment solar active regions and polarity inversion lines from magnetograms.
