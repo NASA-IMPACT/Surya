@@ -61,14 +61,14 @@ def download_data():
         repo_id="nasa-ibm-ai4science/Surya-1.0",
         local_dir="data/Surya-1.0",
         allow_patterns=["config.yaml", "scalers.yaml", "surya.366m.v1.pt"],
-        token=True,
+        token=None,
     )
     snapshot_download(
         repo_id="nasa-ibm-ai4science/Surya-1.0_validation_data",
         repo_type="dataset",
         local_dir="data/Surya-1.0_validation_data",
         allow_patterns="20140107_1[5-9]??.nc",
-        token=True,
+        token=None,
     )
 
 
