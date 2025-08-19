@@ -33,11 +33,6 @@ from surya.utils.distributed import (
 
 from models import (
     HelioSpectformer1D,
-    ResNet18Classifier,
-    ResNet34Classifier,
-    ResNet50Classifier,
-    AlexNetClassifier,
-    MobileNetClassifier,
 )
 
 from surya.utils.log import log
