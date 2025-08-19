@@ -1,4 +1,3 @@
-
 import os
 import re
 from pathlib import Path
@@ -15,10 +14,7 @@ VALID_SPLITTED_TAR_DIR_NAME = "validate_splitted_tars"
 TEST_SPLITTED_TAR_DIR_NAME = "test_splitted_tars"
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +42,7 @@ def combine_tar_parts(path: Path, prefix: str) -> Path:
                 while True:
                     chunk = part_f.read(1024 * 1024)
                     if not chunk:
-                            break
+                        break
                     out_f.write(chunk)
 
     logger.info("Done reading parts")
@@ -62,7 +58,7 @@ def verify_tar_file(tar_file: Path) -> bool:
         True if the tar file is valid, False otherwise
     """
     try:
-        with tarfile.open(tar_file, 'r') as tar:
+        with tarfile.open(tar_file, "r") as tar:
             members = tar.getnames()
             logger.info(f"Tar file {tar_file} verification success")
             logger.info(f"Contains {len(members)} files/directories")
@@ -71,7 +67,6 @@ def verify_tar_file(tar_file: Path) -> bool:
                 logger.info("5 samples")
                 for name in members[:5]:
                     logger.info(f"{name}")
-
 
         return True
 
@@ -149,7 +144,7 @@ def extract_tar(
     logger.info(f"Extracting {tar_}")
     is_valid_tar = verify_tar_file(tar_)
     if is_valid_tar:
-        with tarfile.open(tar_, 'r') as tar:
+        with tarfile.open(tar_, "r") as tar:
             tar.extractall(path=str(extract_path))
     else:
         logger.error(f"Cannot extract {tar_}")
@@ -179,11 +174,7 @@ def fetch_nc_files(directory, start_year, start_month, end_year, end_month):
                 # Check if the file is within the given year and month range
                 if (
                     (start_year < year < end_year)
-                    or (
-                        year == start_year
-                        and month >= start_month
-                        and month <= end_month
-                    )
+                    or (year == start_year and month >= start_month and month <= end_month)
                     or (year == end_year and month <= end_month)
                 ):
                     matching_files.append(str(filepath))
@@ -248,7 +239,7 @@ def create_csv_index(
 
 
 def generate_time_intervals(dirpath, start_year, start_month, end_year, end_month):
-    """ 
+    """
     Generate the time intervals
     Args:
         dirpath: Path to the directory
@@ -285,9 +276,7 @@ def generate_time_intervals(dirpath, start_year, start_month, end_year, end_mont
         # filename = os.path.join(
         #     dirpath, f"{time.year}", f"{time.month:02d}", f"{date_str}_{time_str}.nc"
         # )
-        filename = os.path.join(
-            dirpath, f"{date_str}_{time_str}.nc"
-        )
+        filename = os.path.join(dirpath, f"{date_str}_{time_str}.nc")
         formatted_time = time.strftime("%Y-%m-%d %H:%M:%S")
 
         result.append([filename, formatted_time])
@@ -316,7 +305,9 @@ def download_and_process(
     )
 
     # combine multiple tars into one
-    valid_tar_file_path = combine_tar_parts(path= valid_downloaded_data_path /  splitted_tar_dir_name, prefix=prefix)
+    valid_tar_file_path = combine_tar_parts(
+        path=valid_downloaded_data_path / splitted_tar_dir_name, prefix=prefix
+    )
 
     # Extract files from tars
     valid_extracted_path = extract_tar(tar_file_path=valid_tar_file_path, extract_path=extract_path)
@@ -347,7 +338,7 @@ def download_and_process(
     ]
 
     for task in downstream_tasks:
-        csv_save_path = Path(__file__).parent / task / "assets" 
+        csv_save_path = Path(__file__).parent / task / "assets"
         csv_save_path.mkdir(parents=True, exist_ok=True)
         csv_file_name = f"sdo_{prefix}.csv"
 
@@ -362,8 +353,7 @@ def main():
     valid_allow_patterns = ["**/val.tar.part_*"]
     test_allow_patterns = ["**/test.tar.part_*"]
 
-    # data_path = Path("/rtmp/kmandal/datasets/surya/")
-    data_path = Path(__file__).parent /  "common_data"
+    data_path = Path(__file__).parent / "common_data"
     data_path.mkdir(parents=True, exist_ok=True)
 
     tar_download_dir = data_path / "tars"
@@ -374,7 +364,7 @@ def main():
         splitted_tar_dir_name=VALID_SPLITTED_TAR_DIR_NAME,
         prefix="validate",
         repo_id=REPO_ID,
-        allow_patterns=valid_allow_patterns
+        allow_patterns=valid_allow_patterns,
     )
 
     download_and_process(
@@ -383,7 +373,9 @@ def main():
         splitted_tar_dir_name=TEST_SPLITTED_TAR_DIR_NAME,
         prefix="test",
         repo_id=REPO_ID,
-        allow_patterns=test_allow_patterns
+        allow_patterns=test_allow_patterns,
     )
+
+
 if __name__ == "__main__":
     main()

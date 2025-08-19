@@ -180,9 +180,7 @@ def custom_collate_fn(batch):
     return collated_data, collated_metadata
 
 
-def evaluate_model(
-    dataloader, epoch, model, device, run, config, criterion
-):
+def evaluate_model(dataloader, epoch, model, device, run, config, criterion):
     model.eval()
 
     # Initialize accumulators

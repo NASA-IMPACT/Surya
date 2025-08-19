@@ -1,9 +1,9 @@
 job_id: eve_spectformer
 data:
-  train_data_path: /lustre/fs0/scratch/shared/data/csv_files/dgx_train_index_surya_1_0.csv
-  valid_data_path: /lustre/fs0/scratch/shared/data/csv_files/dgx_valid_index_surya_1_0.csv
-  train_solar_data_path : /lustre/fs0/scratch/shared/data/AIA_EVE_dataset_combined.nc
-  valid_solar_data_path : /lustre/fs0/scratch/shared/data/AIA_EVE_dataset_combined.nc
+  train_data_path: ./assets/sdo_validate.csv
+  valid_data_path: ./assets/sdo_test.csv
+  train_solar_data_path : ./assets/euv-spectra/AIA_EVE_dataset_combined.nc
+  valid_solar_data_path : ./assets/euv-spectra/AIA_EVE_dataset_combined.nc
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
   time_delta_input_minutes: [0]
   time_delta_target_minutes: +60
@@ -13,7 +13,7 @@ data:
   prefetch_factor: 2
   pooling: 1
   random_vert_flip: false
-  scalers_path: assets/scale_signum_log_factor1e-02_2011_2020.yaml
+  scalers_path: ../../data/Surya-1.0/scalers.yaml
 
 model:
   model_type: spectformer # Options: spectformer, resnet18, resnet34, resnet50, alexnet, mobilenet
@@ -56,7 +56,7 @@ optimizer:
   learning_rate: 0.0001
   min_lr: 0.00001
 use_latitude_in_learned_flow: false
-pretrained_path: /lustre/fs0/scratch/johannes/surya_1.0/checkpoints/surya_1.0/weights/epoch_100_loss_0.197.pth
+pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
 
 num_mask_aia_channels: 0
 drop_hmi_probablity: 0.0
