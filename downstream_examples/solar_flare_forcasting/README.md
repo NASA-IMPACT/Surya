@@ -24,7 +24,7 @@ torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 
 ### Dataset
 
-The csv file should be in the format of
+The csv file should be in the format as shown below
 
 ```csv
 timestep,max_goes_class,cumulative_index,label_max,label_cum
