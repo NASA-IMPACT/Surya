@@ -209,3 +209,5 @@ __marimo__/
 wandb/
 logs/
 data/
+downstream_examples/common_data/
+downstream_examples/*/assets/

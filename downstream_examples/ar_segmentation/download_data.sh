@@ -87,3 +87,59 @@ PY
 fi
 
 echo "✓ Done. Files are in: ${TARGET_DIR}"
+
+echo "✓ Download complete"
+
+# ---- Step 4: Find and extract archives inside assets (recursive) ----
+echo "==> Scanning for archives to extract under: ${ASSET_DIR}"
+
+# Require tools
+have tar   || { echo "ERROR: 'tar' not found."; exit 1; }
+# unzip is optional; only required if we see a .zip
+if ! have unzip; then
+  NEED_UNZIP=$(find "${ASSET_DIR}" -type f -name '*.zip' -print -quit || true)
+  if [[ -n "${NEED_UNZIP}" ]]; then
+    echo "ERROR: 'unzip' not found but .zip files are present."
+    exit 1
+  fi
+fi
+
+extract_one() {
+  local src="$1"
+  local base dest
+  case "$src" in
+    *.tar.gz|*.tgz)   base="${src%.tar.gz}"; base="${base%.tgz}";;
+    *.tar.bz2|*.tbz2) base="${src%.tar.bz2}"; base="${base%.tbz2}";;
+    *.tar)            base="${src%.tar}";;
+    *.zip)            base="${src%.zip}";;
+    *) return 0;;
+  esac
+  dest="${base}_extracted"
+
+  # Avoid re-extracting if destination exists and not empty
+  if [[ -d "${dest}" ]] && [[ -n "$(ls -A "${dest}" 2>/dev/null || true)" ]]; then
+    echo "-> Skipping (already extracted): ${src}"
+    return 0
+  fi
+
+  echo "-> Extracting: ${src}"
+  mkdir -p "${dest}"
+  case "$src" in
+    *.tar.gz|*.tgz)   tar -xzf "$src" -C "$dest" ;;
+    *.tar.bz2|*.tbz2) tar -xjf "$src" -C "$dest" ;;
+    *.tar)            tar -xf  "$src" -C "$dest" ;;
+    *.zip)            unzip -q "$src" -d "$dest" ;;
+  esac
+}
+
+# Use find -print0 to handle spaces/newlines safely
+find "${ASSET_DIR}" -type f \
+  \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.tbz2' -o -name '*.zip' \) \
+  -print0 |
+while IFS= read -r -d '' f; do
+  extract_one "$f"
+done
+
+
+echo "✓ Archive extraction complete"
+echo "All done. Data is under: ${TARGET_DIR}"

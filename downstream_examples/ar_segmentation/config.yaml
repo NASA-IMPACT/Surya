@@ -2,8 +2,8 @@
 job_id: AR-segmentation_lora_r32_a64_d0.1
 data:
   # Use this to point at the paths of HelioFM data indices
-  train_data_path: ./assets/index_2011_2015.csv
-  valid_data_path: ./assets/index_2011_2015.csv
+  train_data_path: ./assets/sdo_validate.csv
+  valid_data_path: ./assets/sdo_test.csv
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
   time_delta_input_minutes: [0]
   time_delta_target_minutes: +60

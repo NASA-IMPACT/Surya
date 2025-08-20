@@ -16,53 +16,15 @@ For training run the below code after building the environment
 
 
 ```sh
-git clone git@github.com:NASA-IMPACT/release-downstream-surya.git
-cd release-downstream-surya
-
-uv run torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
+cd downstream_examples/euv_spectra_prediction
+bash download_data.sh
+torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 ```
 
+### Data and pretrained weights
 
-
-Run the prepare_data.ipynb notebook to generate:
-
-    X_train.pt: input tensor of shape (N, 13, 4096, 4096)
-
-    Y_train.csv: corresponding target spectra of shape (N, 1343)
-
-Both files will be saved in the current directory.
-
-Inside the prepare_data.ipynb notebook, we use eve_dataloader to construct the PyTorch-ready dataset aligned with EVE spectra, use the EVEDSDataset class like so:
-
-```bash
-from eve_dataloader import EVEDSDataset
-train_dataset = eve_dataloader.EVEDSDataset(
-    #### All these lines are required by the parent HelioNetCDFDataset class
-    index_path=config.data.train_data_path,
-    time_delta_input_minutes=config.data.time_delta_input_minutes,
-    time_delta_target_minutes=config.data.time_delta_target_minutes,
-    n_input_timestamps=config.data.n_input_timestamps,
-    rollout_steps=config.rollout_steps,
-    channels=config.data.channels,
-    drop_hmi_probablity=config.drop_hmi_probablity,
-    num_mask_aia_channels=config.num_mask_aia_channels,
-    use_latitude_in_learned_flow=config.use_latitude_in_learned_flow,
-    scalers=scalers,
-    phase="train",
-    #### Put your donwnstream (DS) specific parameters below this line
-    ds_eve_index_path= "../../hfmds/data/AIA_EVE_dataset_combined.nc",
-    ds_time_column="train_time",
-    ds_time_tolerance = "6m",
-    ds_match_direction = "forward"    
-)
-```
-To load validation or test data, just change:
-
-    phase → "val" or "test"
-
-    ds_time_column → "val_time" or "test_time"
-
-You can also modify ds_time_tolerance to change the matching window (e.g., "1m", "10s", "15m").
+- The dataset is hosted on Hugging Face: [nasa-ibm-ai4science/euv-spectra](https://huggingface.co/datasets/nasa-ibm-ai4science/euv-spectra/tree/main)
+- The weights can be found at [model/nasa-ibm-ai4science/euv_spectra_surya](https://huggingface.co/nasa-ibm-ai4science/euv_spectra_surya/tree/main)
 
 Preprocessing Details
 
