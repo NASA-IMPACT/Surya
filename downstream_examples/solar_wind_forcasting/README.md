@@ -12,14 +12,16 @@ Ensure the following dependencies are installed:
 For training run the below code after building the environment
 
 ```sh
-git clone git@github.com:NASA-IMPACT/release-downstream-surya.git
-cd release-downstream-surya
-
-uv sync
-
 cd downstream_examples/solar_wind_forcasting
+bash download_data.sh
 uv run torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 ```
+
+### Data and pretrained weights
+
+- The dataset is hosted on Hugging Face: [nasa-ibm-ai4science/solar_wind_surya](https://huggingface.co/datasets/nasa-ibm-ai4science/Surya-bench-solarwind/tree/main)
+- The weights can be found at [model/nasa-ibm-ai4science/solar_wind_surya](https://huggingface.co/nasa-ibm-ai4science/solar_wind_surya/tree/main)
+
 
 ### 📊 Dataset Description
 

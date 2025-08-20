@@ -13,14 +13,14 @@ For training run the below code after building the environment
 
 
 ```sh
-git clone git@github.com:NASA-IMPACT/release-downstream-surya.git
-cd release-downstream-surya
-
-uv sync
-
 cd downstream_examples/solar_flare_forcasting
-uv run torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
+bash download_data.sh
+torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 ```
+### Data and pretrained weights
+
+- The dataset is hosted on Hugging Face: [nasa-ibm-ai4science/surya-bench-flare-forecasting](https://huggingface.co/datasets/nasa-ibm-ai4science/surya-bench-flare-forecasting/tree/main)
+- The weights can be found at [model/nasa-ibm-ai4science/solar_flares_surya](https://huggingface.co/nasa-ibm-ai4science/euv_spectra_surya/tree/main)
 
 ### Dataset
 
