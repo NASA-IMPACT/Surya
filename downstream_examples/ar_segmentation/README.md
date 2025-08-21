@@ -34,6 +34,25 @@ torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 torchrun --nnodes=1 --nproc_per_node=4 --standalone finetune.py
 ```
 
+### 3. Inference
+
+GPU inference
+```bash
+python infer.py --checkpoint_path ./assets/ar_segmentation_weights.pth \
+                --output_dir ./inference_results \
+                --num_viz_samples 2 \
+```
+
+CPU inference
+```bash
+python infer.py --checkpoint_path ./assets/ar_segmentation_weights.pth \
+                --output_dir ./inference_results \
+                --num_viz_samples 2 \
+                --device cpu
+```
+
+
+The output ![Sample output of Surya for 2014-01-07](../../assets/ar_seg_results.png)
 ## Dataset Information
 
 ### Input Data

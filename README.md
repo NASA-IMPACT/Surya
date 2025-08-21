@@ -96,6 +96,20 @@ PASSED                                                    [100%]
 
 ## 🎯 Downstream Applications
 
+To download the Surya model and a sample dataset for downstream tasks, please follow these steps:
+
+```bash
+# Step 1: Run pytest to download the model and verify dependencies
+python -m pytest -s -o log_cli=true tests/test_surya.py  
+
+# Step 2: Navigate to the downstream examples
+cd downstream_examples/
+
+# Step 3: Download the sample dataset
+python download_data.py
+```
+
+
 ### 1. Solar Flare Forecasting
 
 Predict M-class and X-class solar flares up to 24 hours in advance.
