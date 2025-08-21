@@ -17,7 +17,7 @@ from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import Dataset
 from typing import Any, Dict, Optional
 
-from surya.utils.schemas import TrainState
+from .schemas import TrainState
 
 
 def init_dist(device: str, rank: int, world_size: int):
