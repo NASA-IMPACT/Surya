@@ -41,14 +41,14 @@ GPU inference
 python infer.py --checkpoint_path ./assets/ar_segmentation_weights.pth \
                 --output_dir ./inference_results \
                 --num_viz_samples 2 \
-                --device cpu
 ```
 
 CPU inference
 ```bash
 python infer.py --checkpoint_path ./assets/ar_segmentation_weights.pth \
                 --output_dir ./inference_results \
-                --num_viz_samples 2
+                --num_viz_samples 2 \
+                --device cpu
 ```
 
 
