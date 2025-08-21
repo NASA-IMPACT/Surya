@@ -320,7 +320,7 @@ def apply_peft_lora(
         Model with PEFT LoRA adapters applied.
     """
 
-    if not hasattr(config["model"], "lora_config"):
+    if not "lora_config" in config["model"]:
         print0("No LoRA configuration found. Using default LoRA settings.")
         lora_config = {
             "r": 32,  # LoRA rank
@@ -356,12 +356,6 @@ def apply_peft_lora(
     model = get_peft_model(model, peft_config)
 
     if distributed.is_main_process():
-        print("Trainable layers:")
-        for name, param in model.named_parameters():
-            if param.requires_grad:
-                print(name)
-        # Print trainable parameters info
-        model.print_trainable_parameters()
 
         # Log the number of trainable parameters
         trainable_params = 0
