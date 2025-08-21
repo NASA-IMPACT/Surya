@@ -95,13 +95,6 @@ def apply_peft_lora(
 
     # Apply LoRA to the model
     model = get_peft_model(model, peft_config)
-    print("Trainable layers:")
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            print(name)
-
-    # Print trainable parameters info
-    model.print_trainable_parameters()
 
     # Log the number of trainable parameters
     trainable_params = 0
@@ -257,7 +250,6 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
 
     match config["model"]["model_type"]:
         case "spectformer":
-            print0("Initializing HelioSpectformer1D.")
             model = HelioSpectformer1D(
                 img_size=config["model"]["img_size"],
                 patch_size=config["model"]["patch_size"],
