@@ -69,7 +69,7 @@ def apply_peft_lora(model: torch.nn.Module, config) -> torch.nn.Module:
     """
     Apply PEFT LoRA to the model
     """
-    if not hasattr(config["model"], "lora_config"):
+    if not "lora_config" in config["model"]:
         print("No LoRA configuration found. Using default LoRA settings.")
         lora_config = {
             "r": 32,
@@ -170,7 +170,7 @@ def get_dataloader(config, scalers, data_type="test",num_viz_samples=3):
     )
 
     dataloader = DataLoader(
-        dataset=Subset(dataset, [0] + random_ids.tolist()),
+        dataset=Subset(dataset, random_ids.tolist()),
         batch_size=1,
         num_workers=config["data"]["num_data_workers"],
         prefetch_factor=None,

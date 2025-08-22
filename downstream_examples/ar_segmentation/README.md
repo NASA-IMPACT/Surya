@@ -12,9 +12,8 @@ A fine-tuning example for solar Active Region (AR) segmentation using the Surya 
 - Hugging Face account for data access
 
 
-## Quick Start
+## Setup and Data Download
 
-### 1. Setup and Data Download
 ```bash
 cd downstream_examples/ar_segmentation
 
@@ -25,7 +24,7 @@ bash download_data.sh
 python create_ar_csv.py
 ```
 
-### 2. Training
+## Training
 ```bash
 # Single GPU training
 torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
@@ -34,22 +33,59 @@ torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 torchrun --nnodes=1 --nproc_per_node=4 --standalone finetune.py
 ```
 
-### 3. Inference
+## Inference
 
-GPU inference
+Run Active Region segmentation inference using either the interactive notebook or command-line scripts.
+**Prerequisites**: Complete [Setup and Data Download](#setup-and-data-download) setup first.
+
+### Option A: Interactive Notebook (Recommended for beginners)
+
+The [ar_segmentation_tutorial.ipynb](ar_segmentation_tutorial.ipynb) notebook provides step-by-step guidance with visualizations.
+
+### Option B: Command-Line Inference
+
+**Basic GPU Inference**
 ```bash
 python infer.py --checkpoint_path ./assets/ar_segmentation_weights.pth \
                 --output_dir ./inference_results \
-                --num_viz_samples 2 \
+                --num_viz_samples 3 \
+                --device cuda 
 ```
 
-CPU inference
+**CPU Inference** (slower but no GPU required)
 ```bash
 python infer.py --checkpoint_path ./assets/ar_segmentation_weights.pth \
                 --output_dir ./inference_results \
-                --num_viz_samples 2 \
+                --num_viz_samples 3 \
                 --device cpu
 ```
+
+**Advanced Usage**
+```bash
+# Custom configuration and more samples
+python infer.py --config_path ./config.yaml \
+                --checkpoint_path ./assets/ar_segmentation_weights.pth \
+                --output_dir ./custom_results \
+                --num_viz_samples 10 \
+                --data_type valid \
+                --device cuda
+```
+
+### Parameters Reference
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--config_path` | `./config.yaml` | Path to model configuration file |
+| `--checkpoint_path` | `./assets/ar_segmentation_weights.pth` | Path to trained model weights |
+| `--output_dir` | `./inference_results` | Directory for saving results |
+| `--num_viz_samples` | `3` | Number of samples to process and visualize |
+| `--data_type` | `test` | Dataset split to use (`test` or `valid`) |
+| `--device` | `cuda` | Computing device (`cuda` or `cpu`) |
+
+#### Output
+- **Visualizations**: Multi-panel images showing input channels, predictions, and ground truth
+- **Format**: High-resolution PNG files
+- **Naming**: `test_0.png`, `test_1.png`, etc.
+- **Location**: Specified `output_dir`
 
 
 The output ![Sample output of Surya for 2014-01-07](../../assets/ar_seg_results.png)

@@ -54,8 +54,8 @@ model:
   # PEFT LoRA configuration
   use_lora: true
   lora_config:
-    r: 16  # LoRA rank
-    lora_alpha: 32  # LoRA alpha parameter
+    r: 8  # LoRA rank
+    lora_alpha: 8  # LoRA alpha parameter
     target_modules: ['q_proj', 'v_proj', 'k_proj', 'out_proj', 'fc1', 'fc2']  # Target modules for LoRA
     lora_dropout: 0.1
     bias: 'none'
