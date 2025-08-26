@@ -24,7 +24,6 @@ def load_model(config, checkpoint_path, device):
     """
     Load the trained model from checkpoint
     """
-    print(f"Loading model from {checkpoint_path}")
     
     # Initialize model
     model = get_model(config, wandb_logger=None)
@@ -47,6 +46,7 @@ def load_model(config, checkpoint_path, device):
     # Load state dict
     try:
         model.load_state_dict(model_state, strict=True)
+        print(f"Loaded model from {checkpoint_path}")
     except Exception as e:
         print(f"Failed to load with strict=True: {e}")
         # Try to load with strict=False for partial matches
@@ -187,14 +187,14 @@ def infer_samples(
                 timestamps_targets_list.append(timestamps_targets_str)
 
                 # Display results in table format
-                print("\n" + "="*100)
+                print("\n" + "="*150)
                 print(f"Sample {i+1}")
-                print(f"{'Time Input':<20} | {'Time Target':<20} | {'Spectrum Shape':<20} | {'Pred Range':<25} | {'GT Range':<25}")
-                print("-"*100)
+                print(f"{'Time Input':<20} | {'Time Target':<20} | {'Spectrum Shape':<20} | {'Pred Range':<27} | {'GT Range':<27}")
+                print("-"*150)
                 pred_min, pred_max = spectrum_prediction[0].min(), spectrum_prediction[0].max()
                 gt_min, gt_max = ground_truth[0].min(), ground_truth[0].max()
-                print(f"{timestamps_input_str:<20} | {timestamps_targets_str:<20} | {spectrum_prediction.shape[1]:<20} | [{pred_min:.4f}, {pred_max:.4f}]:<25 | [{gt_min:.4f}, {gt_max:.4f}]:<25")
-                print("="*100)
+                print(f"{timestamps_input_str:<20} | {timestamps_targets_str:<20} | {spectrum_prediction.shape[1]:<20} | [{pred_min:.4f}, {pred_max:.4f}]{'':<11} | [{gt_min:.4f}, {gt_max:.4f}]{'':<11}")
+                print("="*150)
 
     # Calculate and display summary statistics
     predictions = np.array(predictions)  # Shape: (num_samples, 1343)
