@@ -99,7 +99,7 @@ def get_dataloader(config, scalers, data_type="test", num_viz_samples=3):
         collate_fn=custom_collate_fn,
     )
 
-    return dataloader
+    return dataset, dataloader
 
 
 def run_inference(config, checkpoint_path, output_dir, device, data_type="test", num_viz_samples=3, device_type="cuda"):
@@ -114,7 +114,7 @@ def run_inference(config, checkpoint_path, output_dir, device, data_type="test",
     model = load_model(config, checkpoint_path, device)
     
     # Get dataloader
-    dataloader = get_dataloader(config, scalers, data_type, num_viz_samples)
+    dataset, dataloader = get_dataloader(config, scalers, data_type, num_viz_samples)
     
     print(f"Dataset size: {len(dataloader.dataset)}")
 
@@ -126,7 +126,8 @@ def run_inference(config, checkpoint_path, output_dir, device, data_type="test",
         gpu=True,
         dtype=config["dtype"],
         save_path=os.path.join(output_dir, 'test.png'),
-        device_type=device_type
+        device_type=device_type,
+        dataset=dataset
     )
 
 
@@ -137,7 +138,8 @@ def infer_single_sample(
     gpu: bool,
     dtype: torch.dtype,
     save_path: str = "test.png",
-    device_type="cuda"
+    device_type="cuda",
+    dataset: WindSpeedDSDataset = None
 ):
     model.eval()
     predictions = []
@@ -162,6 +164,10 @@ def infer_single_sample(
                 
                 # Get model prediction (continuous value for wind speed)
                 wind_speed_prediction = model(batch).item()
+
+                # Un-normalize the prediction and ground truth
+                wind_speed_prediction = dataset.un_norm_output(wind_speed_prediction)
+                ground_truth = dataset.un_norm_output(ground_truth)
                 
                 # Store results for summary
                 predictions.append(wind_speed_prediction)

@@ -21,6 +21,17 @@ torchrun --nnodes=1 --nproc_per_node=1 --standalone finetune.py
 Run Solar Wind speed forecasting inference using either the interactive notebook or command-line scripts.
 **Prerequisites**: Complete setup and data download first.
 
+
+```sh
+# generic downloads
+cd downstream_examples
+python download_data.py
+
+# solar wind specific downloads
+cd downstream_examples/solar_wind_forcasting
+bash download_data.sh
+```
+
 ### Option A: Interactive Notebook (Recommended for beginners)
 
 The [solar_wind_tutorial.ipynb](solar_wind_tutorial.ipynb) notebook provides step-by-step guidance with explanations of forecasting results.
@@ -74,22 +85,9 @@ python infer.py --config_path ./config.yaml \
 ### Example Output
 ```
 ==========================================================================================
-Time Input           | Time Target          | Prediction (km/s)    | Ground Truth (km/s)  
+Time Input           | Time Target          | Prediction (km/s)    | Ground Truth (km/s) 
 ------------------------------------------------------------------------------------------
-2014-01-07T12:00     | 2014-01-11T12:00     | 425.67               | 398.23              
-2014-01-08T06:00     | 2014-01-12T06:00     | 512.34               | 489.76              
-2014-01-09T15:30     | 2014-01-13T15:30     | 367.89               | 402.15              
-==========================================================================================
-
-==========================================================================================
-SUMMARY STATISTICS
-==========================================================================================
-Metric                    | Value               
-------------------------------------------------------------------------------------------
-Mean Absolute Error       | 28.4567            
-Root Mean Square Error    | 35.7891            
-R² Score                  | 0.8234             
-Number of Samples         | 3                  
+2011-01-07T01:00     | 2011-01-07T02:00     | 501.81               | 483.00              
 ==========================================================================================
 ```
 
