@@ -433,10 +433,12 @@ def get_dataloaders(config, scalers):
         phase="train",
         #### Put your donwnstream (DS) specific parameters below this line
         ds_solar_wind_path=config["data"]["solarwind_index"],
-        ds_time_column="Epoch",
-        ds_time_delta_in_out="4D",
-        ds_time_tolerance="1h",
-        ds_match_direction="forward",
+        ds_time_column=config["data"]["ds_time_column"],
+        ds_time_delta_in_out=config["data"]["ds_time_delta_in_out"],
+        ds_time_tolerance=config["data"]["ds_time_tolerance"],
+        ds_match_direction=config["data"]["ds_match_direction"],
+        ds_normalize=config["data"]["ds_normalize"],
+        ds_scaler=config["data"]["ds_scaler"],
     )
     print0(f"Total dataset size: {len(train_dataset)}")
 

@@ -13,6 +13,12 @@ data:
   scalers_path: ../../data/Surya-1.0/scalers.yaml
   #### Put your donwnstream (DS) specific parameters below this line
   solarwind_index: "assets/Surya-bench-solarwind/train_val_appended.csv"
+  ds_time_column: "Epoch"
+  ds_time_delta_in_out: "4D"
+  ds_time_tolerance: "1h"
+  ds_match_direction: "forward"
+  ds_normalize: true
+  ds_scaler: [2.61, 0.09]
 
 model:
   model_type: spectformer # Options: spectformer
@@ -53,12 +59,11 @@ model:
   dropout: 0.2
   use_lora: true
   lora_config:
-    r: 8  # LoRA rank
-    lora_alpha: 8  # LoRA alpha parameter
+    r: 64  # LoRA rank
+    lora_alpha: 32  # LoRA alpha parameter
     target_modules: ['q_proj', 'v_proj', 'k_proj', 'out_proj', 'fc1', 'fc2']  # Target modules for LoRA
     lora_dropout: 0.1
     bias: 'none'
-    # task_type: 'SEQ_CLS'
 
 metrics:
   # metrics for AR segmentation
