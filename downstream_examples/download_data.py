@@ -119,7 +119,7 @@ def download_dataset(
         allow_patterns=allow_patterns,
         ignore_patterns=ignore_patterns,
         resume_download=resume_download,
-        token=True,
+        token=None,
     )
 
     logger.info(f"Dataset downloaded successfully at: {downloaded_path}")
