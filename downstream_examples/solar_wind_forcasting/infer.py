@@ -58,7 +58,7 @@ def load_model(config, checkpoint_path, device):
     return model
 
 
-def get_dataloader(config, scalers, data_type="test", num_viz_samples=3):
+def get_dataloader(config, scalers, data_type="test", num_samples=3):
     """
     Create dataloader for inference
     """
@@ -86,7 +86,7 @@ def get_dataloader(config, scalers, data_type="test", num_viz_samples=3):
     )
 
     random_ids = (
-        torch.randperm(len(dataset) - 1)[: num_viz_samples] + 1
+        torch.randperm(len(dataset) - 1)[: num_samples] + 1
     )
 
     dataloader = DataLoader(
@@ -102,7 +102,7 @@ def get_dataloader(config, scalers, data_type="test", num_viz_samples=3):
     return dataset, dataloader
 
 
-def run_inference(config, checkpoint_path, output_dir, device, data_type="test", num_viz_samples=3, device_type="cuda"):
+def run_inference(config, checkpoint_path, output_dir, device, data_type="test", num_samples=3, device_type="cuda"):
     """
     Run inference on the dataset
     """
@@ -114,7 +114,7 @@ def run_inference(config, checkpoint_path, output_dir, device, data_type="test",
     model = load_model(config, checkpoint_path, device)
     
     # Get dataloader
-    dataset, dataloader = get_dataloader(config, scalers, data_type, num_viz_samples)
+    dataset, dataloader = get_dataloader(config, scalers, data_type, num_samples)
     
     print(f"Dataset size: {len(dataloader.dataset)}")
 
@@ -239,7 +239,7 @@ def main():
         help="Device to run inference on (cuda or cpu).",
     )
     parser.add_argument(
-        "--num_viz_samples",
+        "--num_samples",
         default=3,
         type=int,
         help="Number of samples to visualize.",
@@ -278,7 +278,7 @@ def main():
         output_dir=args.output_dir,
         device=device,
         data_type=args.data_type,
-        num_viz_samples=args.num_viz_samples,
+        num_samples=args.num_samples,
         device_type=args.device
     )
 

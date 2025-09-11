@@ -42,7 +42,7 @@ The [solar_wind_tutorial.ipynb](solar_wind_tutorial.ipynb) notebook provides ste
 ```bash
 python infer.py --checkpoint_path ./assets/solar_wind_weights.pth \
                 --output_dir ./inference_results \
-                --num_viz_samples 3 \
+                --num_samples 3 \
                 --device cuda 
 ```
 
@@ -50,7 +50,7 @@ python infer.py --checkpoint_path ./assets/solar_wind_weights.pth \
 ```bash
 python infer.py --checkpoint_path ./assets/solar_wind_weights.pth \
                 --output_dir ./inference_results \
-                --num_viz_samples 3 \
+                --num_samples 3 \
                 --device cpu
 ```
 
@@ -60,7 +60,7 @@ python infer.py --checkpoint_path ./assets/solar_wind_weights.pth \
 python infer.py --config_path ./config.yaml \
                 --checkpoint_path ./assets/solar_wind_weights.pth \
                 --output_dir ./custom_results \
-                --num_viz_samples 10 \
+                --num_samples 10 \
                 --data_type valid \
                 --device cuda
 ```
@@ -71,7 +71,7 @@ python infer.py --config_path ./config.yaml \
 | `--config_path` | `./config.yaml` | Path to model configuration file |
 | `--checkpoint_path` | `./assets/solar_wind_weights.pth` | Path to trained model weights |
 | `--output_dir` | `./inference_results` | Directory for saving results |
-| `--num_viz_samples` | `3` | Number of samples to process and analyze |
+| `--num_samples` | `3` | Number of samples to process and analyze |
 | `--data_type` | `test` | Dataset split to use (`test` or `valid`) |
 | `--device` | `cuda` | Computing device (`cuda` or `cpu`) |
 

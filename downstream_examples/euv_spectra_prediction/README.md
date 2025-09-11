@@ -41,7 +41,7 @@ The [euv_spectra_tutorial.ipynb](euv_spectra_tutorial.ipynb) notebook provides s
 ```bash
 python infer.py --checkpoint_path ./assets/euv_spectra_weights.pth \
                 --output_dir ./inference_results \
-                --num_viz_samples 3 \
+                --num_samples 3 \
                 --device cuda 
 ```
 
@@ -49,7 +49,7 @@ python infer.py --checkpoint_path ./assets/euv_spectra_weights.pth \
 ```bash
 python infer.py --checkpoint_path ./assets/euv_spectra_weights.pth \
                 --output_dir ./inference_results \
-                --num_viz_samples 3 \
+                --num_samples 3 \
                 --device cpu
 ```
 
@@ -59,7 +59,7 @@ python infer.py --checkpoint_path ./assets/euv_spectra_weights.pth \
 python infer.py --config_path ./config.yaml \
                 --checkpoint_path ./assets/euv_spectra_weights.pth \
                 --output_dir ./custom_results \
-                --num_viz_samples 5 \
+                --num_samples 5 \
                 --data_type valid \
                 --device cuda
 ```
@@ -70,7 +70,7 @@ python infer.py --config_path ./config.yaml \
 | `--config_path` | `./config.yaml` | Path to model configuration file |
 | `--checkpoint_path` | `./assets/euv_spectra_weights.pth` | Path to trained model weights |
 | `--output_dir` | `./inference_results` | Directory for saving results |
-| `--num_viz_samples` | `3` | Number of samples to process and analyze |
+| `--num_samples` | `3` | Number of samples to process and analyze |
 | `--data_type` | `test` | Dataset split to use (`test`, `valid`, or `train`) |
 | `--device` | `cuda` | Computing device (`cuda` or `cpu`) |
 
