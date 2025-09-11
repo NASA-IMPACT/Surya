@@ -28,7 +28,8 @@ def load_model(config, checkpoint_path, device):
     model = get_model(config, wandb_logger=None)
     
     # Apply LoRA if needed
-    model = apply_peft_lora(model, config)
+    if config["model"]["use_lora"]: 
+        model = apply_peft_lora(model, config) 
     
     # Load checkpoint
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)

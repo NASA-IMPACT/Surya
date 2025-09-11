@@ -109,7 +109,7 @@ def load_model(config, checkpoint_path, device):
     model = get_model(config)
     
     # Apply LoRA if needed
-    if config["model"]["model_type"] == "spectformer_lora":
+    if config["model"]["use_lora"]: 
         model = apply_peft_lora(model, config)
     
     # Load checkpoint
