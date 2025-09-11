@@ -116,15 +116,14 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
             "datetime64[ns]"
         )
         self.ds_index.sort_values("ds_index", inplace=True)
+        self.un_norm_ptp = np.ptp(self.ds_index["V"])
+        self.un_norm_min = np.min(self.ds_index["V"])
         print("Timedelta", self.ds_time_delta_in_out)
         # Get the matched solar wind speed time index. We will match index[FM] with index[DS]-dT
         self.ds_index["sw_match_index"] = self.ds_index["ds_index"] - self.ds_time_delta_in_out
 
         # Implement normalization.  This is going to be DS application specific, no two will look the same
-        self.ds_index["V"] = (self.ds_index["V"] - np.min(self.ds_index["V"])) / np.ptp(
-            self.ds_index["V"]
-        )
-
+        self.ds_index["V"] = (self.ds_index["V"] - self.un_norm_min) / self.un_norm_ptp
         # Create HelioFM valid indices and find closest match to DS index
         self.df_valid_indices = pd.DataFrame({"valid_indices": self.valid_indices}).sort_values(
             "valid_indices"
@@ -173,6 +172,10 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
                 )
         else:
             self.ds_scaler = [torch.tensor(1), torch.tensor(1)]
+
+    
+    def un_norm_output(self,x):
+        return x * self.un_norm_ptp + self.un_norm_min
 
     def __len__(self):
         return self.adjusted_length

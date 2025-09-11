@@ -44,6 +44,7 @@ model:
   # Finetuning config fields
   ft_unembedding_type: "linear" # "linear" or "perceiver"
   ft_out_chans: 1
+  use_lora: true
   lora_config:
     r: 32  # LoRA rank
     lora_alpha: 64  # LoRA alpha parameter
