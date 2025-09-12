@@ -2,11 +2,10 @@
 
 # ☀️ Surya: Foundation Model for Heliophysics ☀️
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/release/python-3110/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.6+-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![HuggingFace](https://img.shields.io/badge/🤗%20Hugging%20Face-Models-yellow)](https://huggingface.co/nasa-ibm-ai4science)
-
+[![arXiv](https://img.shields.io/badge/arXiv-2508.14112-b31b1b.svg?style=flat)](https://arxiv.org/abs/2508.14112)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+   
 *The first foundation model for heliophysics trained on full-resolution Solar Dynamics Observatory data*
 
 </div>
@@ -227,10 +226,10 @@ Our preprocessing ensures ML-ready, physics-consistent data:
 If you use Surya in your research, please cite our paper:
 
 ```bibtex
-@article{roy2024surya,
+@article{roy2025surya,
   title={Surya: Foundation Model for Heliophysics},
-  author={Roy, Sujit and Schmude, Johannes and Lal, Rohit and Gaur, Vishal and Freitag, Marcus and others},
-  journal={arXiv preprint},
+  author={Roy, Sujit and Schmude, Johannes and Lal, Rohit and Gaur, Vishal and Freitag, Marcus and Kuehnert, Julian and van Kessel, Theodore and Hegde, Dinesha V and Mu{\~n}oz-Jaramillo, Andr{\'e}s and Jakubik, Johannes and others},
+  journal={arXiv preprint arXiv:2508.14112},
   year={2025}
 }
 ```
