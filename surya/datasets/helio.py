@@ -481,7 +481,7 @@ class HelioNetCDFDataset(Dataset):
         """
         self.logger.info(f"Reading file {filepath}.")
         
-        if self.sdo_data_root_path:
+        if self.sdo_data_root_path and not os.path.isabs(filepath):
             filepath = os.path.join(self.sdo_data_root_path, filepath)
         
         with xr.open_dataset(

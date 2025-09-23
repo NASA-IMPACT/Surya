@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import wandb
+from tqdm import tqdm
 
 # Now try imports
 from dataset import WindSpeedDSDataset
@@ -420,6 +421,7 @@ def get_dataloaders(config, scalers):
 
     train_dataset = WindSpeedDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
         index_path=config["data"]["train_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
@@ -432,7 +434,7 @@ def get_dataloaders(config, scalers):
         scalers=scalers,
         phase="train",
         #### Put your donwnstream (DS) specific parameters below this line
-        ds_solar_wind_path=config["data"]["solarwind_index"],
+        ds_solar_wind_path=config["data"]["solarwind_train_index"],
         ds_time_column=config["data"]["ds_time_column"],
         ds_time_delta_in_out=config["data"]["ds_time_delta_in_out"],
         ds_time_tolerance=config["data"]["ds_time_tolerance"],
@@ -444,7 +446,8 @@ def get_dataloaders(config, scalers):
 
     valid_dataset = WindSpeedDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
-        index_path=config["data"]["train_data_path"],
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
+        index_path=config["data"]["valid_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
         n_input_timestamps=config["model"]["time_embedding"]["time_dim"],
@@ -456,7 +459,7 @@ def get_dataloaders(config, scalers):
         scalers=scalers,
         phase="valid",
         #### Put your donwnstream (DS) specific parameters below this line
-        ds_solar_wind_path=config["data"]["solarwind_index"],
+        ds_solar_wind_path=config["data"]["solarwind_valid_index"],
         ds_time_column="Epoch",
         ds_time_delta_in_out="4D",
         ds_time_tolerance="1h",
@@ -516,7 +519,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
     train_loader, valid_loader = get_dataloaders(config, scalers)
     model = get_model(config, run)
-    if config["model"]["use_lora"]:
+    if config["model"]["use_lora"] and config["model"]["model_type"] == "spectformer":
         model = apply_peft_lora(model, config)
     model.to(rank)
 
@@ -547,58 +550,58 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         running_loss = torch.tensor(0.0, device=device)
         running_batch = torch.tensor(0, device=device)
 
-        for i, (batch, metadata) in enumerate(train_loader):
-            # batch = batch[0]
-            # batch["ts"] = np.transpose(batch["ts"], (1, 0, 2, 3))
-            # batch["ts"] = torch.from_numpy(batch["ts"]).to(local_rank)
-            # batch["target"] = batch["target"].to(local_rank).float()
-            batch["ts"] = batch["ts"].permute(0, 2, 1, 3, 4).to(local_rank)
-            batch["target"] = batch["target"].to(local_rank)
-            batch["ds_time"] = batch["ds_time"].to(local_rank, dtype=torch.float32)
+        # Wrap train_loader with tqdm for progress bar
+        with tqdm(
+            enumerate(train_loader),
+            total=min(len(train_loader), config["iters_per_epoch_train"])
+            if "iters_per_epoch_train" in config and config["iters_per_epoch_train"] > 0
+            else len(train_loader),
+            desc=f"Epoch {epoch}",
+            disable=not distributed.is_main_process(),
+            leave=False,
+        ) as t:
+            for i, (batch, metadata) in t:
+                batch["ts"] = batch["ts"].permute(0, 2, 1, 3, 4).to(local_rank)
+                batch["target"] = batch["target"].to(local_rank)
+                batch["ds_time"] = batch["ds_time"].to(local_rank, dtype=torch.float32)
 
-            if config["iters_per_epoch_train"] == i:
-                break
+                if config["iters_per_epoch_train"] == i:
+                    break
 
-            curr_batch = {k: v.to(local_rank) for k, v in batch.items()}
-            # curr_batch = {}
-            # for k, v in batch.items():
-            #     try:
-            #         curr_batch[k] = v.to(local_rank)
-            #     except AttributeError as e:
-            #         if k not in[ 'ds_time']:
-            #             curr_batch[k] = torch.from_numpy(v).to(local_rank)
-            #         else:
-            #             curr_batch['ds_time'] = torch.tensor(batch['ds_time'].timestamp(), dtype=torch.float32)
+                curr_batch = {k: v.to(local_rank) for k, v in batch.items()}
 
-            # Forward pass
-            optimizer.zero_grad()
-            with autocast(device_type="cuda", dtype=config["dtype"]):
-                outputs = model(curr_batch)
-                target = curr_batch["target"].float()
-                loss = criterion(outputs, target)
+                # Forward pass
+                optimizer.zero_grad()
+                with autocast(device_type="cuda", dtype=config["dtype"]):
+                    outputs = model(curr_batch)
+                    target = curr_batch["target"].float()
+                    loss = criterion(outputs, target)
 
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
 
-            # Reduce loss across all processes
-            reduced_loss = loss.detach()
-            dist.all_reduce(reduced_loss, op=dist.ReduceOp.SUM)
-            reduced_loss /= dist.get_world_size()
+                # Reduce loss across all processes
+                reduced_loss = loss.detach()
+                dist.all_reduce(reduced_loss, op=dist.ReduceOp.SUM)
+                reduced_loss /= dist.get_world_size()
 
-            running_loss += reduced_loss
-            running_batch += 1
+                running_loss += reduced_loss
+                running_batch += 1
 
-            # Print/log only from rank 0
-            if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
-                print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
-                # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run, {"train_loss": reduced_loss.item()})
+                # Update tqdm with current loss
+                if distributed.is_main_process():
+                    t.set_postfix(loss=reduced_loss.item())
 
-            if (i + 1) % config["save_wt_after_iter"] == 0:
-                print0(f"Reached save_wt_after_iter ({config['save_wt_after_iter']}).")
-                fp = os.path.join(config["path_experiment"], "checkpoint.pth")
-                distributed.save_model_singular(model, fp, parallelism=config["parallelism"])
+                # Print/log only from rank 0
+                if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
+                    print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
+                    log(run, {"train_loss": reduced_loss.item()})
+
+                if (i + 1) % config["save_wt_after_iter"] == 0:
+                    print0(f"Reached save_wt_after_iter ({config['save_wt_after_iter']}).")
+                    fp = os.path.join(config["path_experiment"], "checkpoint.pth")
+                    distributed.save_model_singular(model, fp, parallelism=config["parallelism"])
 
         dist.all_reduce(running_loss, op=dist.ReduceOp.SUM)
         dist.all_reduce(running_batch, op=dist.ReduceOp.SUM)

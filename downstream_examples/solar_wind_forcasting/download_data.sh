@@ -65,12 +65,21 @@ if [[ -n "${HFCLI}" && "${HFCLI}" == "huggingface-cli" ]]; then
     --repo-type "${REPO_TYPE}" \
     --local-dir "${TARGET_DIR}" \
     --local-dir-use-symlinks False
+
+  huggingface-cli download nasa-ibm-ai4science/SDO_training \
+  --repo-type dataset --local-dir "${ASSET_DIR}" \
+  --include "*_index_surya_1_0.csv"
+
 elif [[ -n "${HFCLI}" && "${HFCLI}" == "hf" ]]; then
   # Newer CLI alias
   hf snapshot download "${REPO_ID}" \
     --repo-type "${REPO_TYPE}" \
     --local-dir "${TARGET_DIR}" \
     --local-dir-use-symlinks False
+  
+  hf download nasa-ibm-ai4science/SDO_training \
+  --repo-type dataset --local-dir "${ASSET_DIR}" \
+  --include "*_index_surya_1_0.csv"
 else
   # Python fallback using the library API
   python3 - <<PY
@@ -82,6 +91,9 @@ local_dir = r"${TARGET_DIR}"
 token = os.environ.get("HUGGINGFACE_HUB_TOKEN") or os.environ.get("HF_TOKEN")
 snapshot_download(repo_id, repo_type=repo_type, local_dir=local_dir,
                   local_dir_use_symlinks=False, token=token)
+snapshot_download(repo_id="nasa-ibm-ai4science/SDO_training", repo_type=repo_type, local_dir=r"${ASSET_DIR}",
+                  token=token, allow_patterns="*_index_surya_1_0.csv")
+
 print("Download complete:", local_dir)
 PY
 fi
