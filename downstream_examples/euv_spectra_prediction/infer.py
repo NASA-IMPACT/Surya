@@ -85,11 +85,14 @@ def get_dataloader(config, scalers, data_type="test", num_samples=3):
         ds_match_direction="forward",
     )
 
-    # Select random samples for visualization
-    random_ids = torch.randperm(len(dataset))[:num_samples]
+    assert len(dataset) > 0, "No data found"
+
+    random_ids = (
+        torch.randperm(len(dataset) - 1)[: num_samples-1] + 1
+    )
 
     dataloader = DataLoader(
-        dataset=Subset(dataset, random_ids.tolist()),
+        dataset=Subset(dataset, [0] + random_ids.tolist()),
         batch_size=1,
         num_workers=config["data"]["num_data_workers"],
         prefetch_factor=None,

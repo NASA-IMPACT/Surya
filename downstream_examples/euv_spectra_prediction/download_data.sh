@@ -40,6 +40,10 @@ if [[ -n "${HFCLI}" && "${HFCLI}" == "hf" ]]; then
     --local-dir "${TARGET_DIR}" \
     --include "*_temporally_stratified.nc"
   
+  hf download nasa-ibm-ai4science/euv_spectra_surya \
+  --repo-type model --local-dir "${ASSET_DIR}" \
+  --include "*.pth"
+
   hf download nasa-ibm-ai4science/SDO_training \
   --repo-type dataset --local-dir "${ASSET_DIR}" \
   --include "*_index_surya_1_0.csv" "infer_data/*" "scalers.yaml"
@@ -56,7 +60,7 @@ token = os.environ.get("HUGGINGFACE_HUB_TOKEN") or os.environ.get("HF_TOKEN")
 snapshot_download(repo_id, repo_type=repo_type, local_dir=local_dir,
                   local_dir_use_symlinks=False, token=token)
 snapshot_download(repo_id="nasa-ibm-ai4science/SDO_training", repo_type=repo_type, local_dir=r"${ASSET_DIR}",
-                  token=token, allow_patterns=["*_index_surya_1_0.csv", "infer_data/*"])
+                  token=token, allow_patterns=["*_index_surya_1_0.csv", "infer_data/*", "scalers.yaml"])
 
 print("Download complete:", local_dir)
 PY
