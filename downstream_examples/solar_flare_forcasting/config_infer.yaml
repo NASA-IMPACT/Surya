@@ -77,7 +77,7 @@ optimizer:
   min_lr: 0.00001
 
 use_latitude_in_learned_flow: false
-pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
+pretrained_path: ./assets/surya.366m.v1.pt
 # from_checkpoint: <PATH TO BEST CHECKPOINT linembed-input1_0.1>
 loss_weights: [] # [] or list of weights per channel
 rollout_steps: 0

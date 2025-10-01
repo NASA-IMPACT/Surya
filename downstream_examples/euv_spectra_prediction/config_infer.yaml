@@ -55,7 +55,7 @@ optimizer:
   learning_rate: 0.0001
   min_lr: 0.00001
 use_latitude_in_learned_flow: false
-pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
+pretrained_path: ./assets/surya.366m.v1.pt
 
 num_mask_aia_channels: 0
 drop_hmi_probablity: 0.0

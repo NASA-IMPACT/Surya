@@ -43,6 +43,10 @@ if [[ -n "${HFCLI}" && "${HFCLI}" == "hf" ]]; then
   --repo-type model --local-dir "${ASSET_DIR}" \
   --include "*.pth"
 
+  hf download nasa-ibm-ai4science/Surya-1.0 \
+  --repo-type model --local-dir "${ASSET_DIR}" \
+  --include "surya.366m.v1.pt"
+
   hf download nasa-ibm-ai4science/SDO_training \
   --repo-type dataset --local-dir "${ASSET_DIR}" \
   --include "*_index_surya_1_0.csv" "infer_data/*" "scalers.yaml"
@@ -57,9 +61,12 @@ repo_type = "${REPO_TYPE}"
 local_dir = r"${TARGET_DIR}"
 token = os.environ.get("HUGGINGFACE_HUB_TOKEN") or os.environ.get("HF_TOKEN")
 snapshot_download(repo_id, repo_type=repo_type, local_dir=local_dir,
-                  local_dir_use_symlinks=False, token=token)
+                  local_dir_use_symlinks=False, token=None)
 snapshot_download(repo_id="nasa-ibm-ai4science/SDO_training", repo_type=repo_type, local_dir=r"${ASSET_DIR}",
-                  token=token, allow_patterns=["*_index_surya_1_0.csv", "infer_data/*", "scalers.yaml"])
+                  token=None, allow_patterns=["*_index_surya_1_0.csv", "infer_data/*", "scalers.yaml"])
+snapshot_download(repo_id="nasa-ibm-ai4science/Surya-1.0", local_dir=r"${ASSET_DIR}",
+                  token=None,allow_patterns=["surya.366m.v1.pt"],
+)
 
 print("Download complete:", local_dir)
 PY
