@@ -15,6 +15,7 @@ class ArDSDataset(HelioNetCDFDataset):
     def __init__(
         self,
         #### All these lines are required by the parent HelioNetCDFDataset class
+        sdo_data_root_path: str,
         index_path: str,
         time_delta_input_minutes: list[int],
         time_delta_target_minutes: int,
@@ -30,6 +31,7 @@ class ArDSDataset(HelioNetCDFDataset):
         ds_ar_index_paths: list = None,
     ):
         super().__init__(
+            sdo_data_root_path=sdo_data_root_path,
             index_path=index_path,
             time_delta_input_minutes=time_delta_input_minutes,
             time_delta_target_minutes=time_delta_target_minutes,
