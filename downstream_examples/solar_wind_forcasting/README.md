@@ -23,6 +23,10 @@ Run Solar Wind speed forecasting inference using either the interactive notebook
 
 
 ```sh
+# generic downloads
+cd downstream_examples
+python download_data.py
+
 # solar wind specific downloads
 cd downstream_examples/solar_wind_forcasting
 bash download_data.sh

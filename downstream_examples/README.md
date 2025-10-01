@@ -6,17 +6,9 @@ This repository contains downstream finetuning code related to six key tasks tha
 3. **[Solar Flare Forecasting](solar_flare_forcasting/)**
 4. **[Solar Wind Forecasting](solar_wind_forcasting/)**
 
-### Inference tasks
-
-For inference tasks, we have provided a end to end notebook to run the inference pipeline which includes downloading sample SDO data, model weights and running the inference pipeline.
-
-1. **[📒 Active Region Segmentation Notebook](ar_segmentation/ar_segmentation_tutorial.ipynb)**
-2. **[📒 Solar EUV Spectra Modeling Notebook](euv_spectra_prediction/euv_spectra_tutorial.ipynb)**
-3. **[📒 Solar Flare Forecasting Notebook](solar_flare_forcasting/solar_flare_tutorial.ipynb)**
-4. **[📒 Solar Wind Forecasting Notebook](solar_wind_forcasting/solar_wind_tutorial.ipynb)**
 
 
-## (Optional) Download SDO Data for Training
+## Download SDO Data
 
 The data is located at [nasa-ibm-ai4science/SDO_training](https://huggingface.co/datasets/nasa-ibm-ai4science/SDO_training)
 
@@ -31,7 +23,7 @@ Downloads and generates csv files. The `data_path` is defined in the main functi
 ### Run the python file to download data
 
 ```bash
-python download_sample_train_data.py
+python download_data.py
 ```
 
 The structure of the downloaded file should give the following structure:
@@ -109,7 +101,7 @@ The created `sdo_test.csv` and `sdo_validate.csv` are created with the following
 
 Note: 
 1. In the `sdo_{test,validate}.csv`, an entry for every 12 minute cadence are created from the start date and month to end date and month. The `present` column represent if we have the nc file. So, if we have 297 files and two month of range we will have 6962 entries, with 297 entries having `1` and the rest with `0`. These are used by the dataloaders to determine the files to use.
-2. These csv are created for all the downstreams present in `downstream_tasks` variable in the `download_sample_train_data.py` file.
+2. These csv are created for all the downstreams present in `downstream_tasks` variable in the `download_data.py` file.
 3. All the tar part files must be downloaded to create a complete tar file. If any of the data is missing, we cannot create a tar file and extract the `nc` files. So be sure to have enough data space for the 3 steps:
     a. part tars
     b. complete (combined) tars

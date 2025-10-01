@@ -92,7 +92,6 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
         ds_match_direction: str = "forward",
         ds_normalize=True,
         ds_scaler=[2.61, 0.09],
-        sdo_data_root_path: str = None,
     ):
 
         ## Initialize parent class
@@ -108,7 +107,6 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
             use_latitude_in_learned_flow=use_latitude_in_learned_flow,
             channels=channels,
             phase=phase,
-            sdo_data_root_path=sdo_data_root_path,
         )
 
         # Load ds index and find intersection with HelioFM index

@@ -22,7 +22,11 @@ Run EUV spectra prediction inference using either the interactive notebook or co
 **Prerequisites**: Complete setup and data download first.
 
 ```sh
-# EUV specific downloads (inference data)
+# generic downloads
+cd downstream_examples
+python download_data.py
+
+#euv specific downloads
 cd euv_spectra_prediction
 bash download_data.sh
 ```

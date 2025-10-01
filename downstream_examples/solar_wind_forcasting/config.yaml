@@ -1,9 +1,8 @@
-job_id: solar-wind_surya
+job_id: solar-wind
 data:
   # Use this to point at the paths of HelioFM data indices
-  sdo_data_root_path: /nobackupnfs1/sroy14/processed_data/Helio/nc
-  train_data_path: ./assets/train_index_surya_1_0.csv
-  valid_data_path: ./assets/valid_index_surya_1_0.csv
+  train_data_path: ./assets/sdo_validate.csv
+  valid_data_path: ./assets/sdo_test.csv
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
   time_delta_input_minutes: [0]
   time_delta_target_minutes: +60
@@ -11,12 +10,10 @@ data:
   batch_size: 1
   num_data_workers: 8
   prefetch_factor: 2
-  scalers_path: ./assets/scalers.yaml
+  scalers_path: ../../data/Surya-1.0/scalers.yaml
   #### Put your donwnstream (DS) specific parameters below this line
-  # solarwind_index: "./assets/Surya-bench-solarwind/solarwind_train.csv"
-  solarwind_train_index: "./assets/Surya-bench-solarwind/solarwind_train.csv"
-  solarwind_valid_index: "./assets/Surya-bench-solarwind/solarwind_valid.csv"
-  ds_time_column: "timestamp"
+  solarwind_index: "assets/Surya-bench-solarwind/train_val_appended.csv"
+  ds_time_column: "Epoch"
   ds_time_delta_in_out: "4D"
   ds_time_tolerance: "1h"
   ds_match_direction: "forward"
@@ -85,11 +82,11 @@ num_mask_aia_channels: 0
 drop_hmi_probability: 0.0
 validate_after_epoch: 1
 wandb_log_train_after: 5 # This should be less than iters_per_epoch_train
-wandb_project: "downstream_surya" # Typical choices: "helio-fm", "spectformer_with_metrics"
+wandb_project: "helio-fm" # Typical choices: "helio-fm", "spectformer_with_metrics"
 visualization_samples: 3
 save_wt_after_iter: 1000
-path_experiment: checkpoints/solar-wind_surya
-iters_per_epoch_train: 2000
+path_experiment: checkpoints
+iters_per_epoch_train: 10000
 iters_per_epoch_valid: 200
 iters_grad_accum: 1
 dtype: float32

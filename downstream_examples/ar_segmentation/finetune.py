@@ -271,6 +271,8 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
     if torch.cuda.is_available():
         print0("GPU is available")
         device = torch.cuda.current_device()
+    else:
+        raise Exception("Training pipeline is not configured to run on CPU.")
 
     pretrained_path = config["pretrained_path"]
 
@@ -278,7 +280,7 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
         if (pretrained_path is not None) and os.path.exists(pretrained_path):
             print0(f"Loading pretrained model from {pretrained_path}.")
             model_state = model.state_dict()
-            checkpoint_state = torch.load(pretrained_path, weights_only=True, map_location="cpu")
+            checkpoint_state = torch.load(pretrained_path, weights_only=True)
 
             filtered_checkpoint_state = {
                 k: v
@@ -391,7 +393,6 @@ def broadcast_dict(obj_dict, src=0):
 def get_dataloaders(config, scalers):
 
     train_dataset = ArDSDataset(
-        sdo_data_root_path=config["data"]["sdo_data_root_path"],
         index_path=config["data"]["train_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
@@ -407,7 +408,6 @@ def get_dataloaders(config, scalers):
         ds_ar_index_paths=config["data"]["ar_index_train"],
     )
     valid_dataset = ArDSDataset(
-        sdo_data_root_path=config["data"]["sdo_data_root_path"],
         index_path=config["data"]["valid_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
