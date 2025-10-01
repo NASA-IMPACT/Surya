@@ -7,7 +7,7 @@ class SolarFlareDataset(HelioNetCDFDataset):
     """
     The solar flare index data (flare_index_path) should be of the form
 
-    timestep,max_goes_class,cumulative_index,label_max,label_cum
+    timestamp,max_goes_class,cumulative_index,label_max,label_cum
     2011-01-01 00:00:00,B8.3,0.0,0,0
     2011-01-01 01:00:00,B8.3,0.0,0,0
     2011-01-01 02:00:00,B8.3,0.0,0,0
@@ -19,6 +19,7 @@ class SolarFlareDataset(HelioNetCDFDataset):
 
     def __init__(
         self,
+        sdo_data_root_path: str,
         index_path: str,
         flare_index_path: str,
         time_delta_input_minutes: list[int],
@@ -36,13 +37,14 @@ class SolarFlareDataset(HelioNetCDFDataset):
     ):
 
         self.flare_index = pd.read_csv(flare_index_path)
-        self.flare_index["timestep"] = pd.to_datetime(self.flare_index["timestep"]).values.astype(
+        self.flare_index["timestamp"] = pd.to_datetime(self.flare_index["timestamp"]).values.astype(
             "datetime64[ns]"
         )
-        self.flare_index.set_index("timestep", inplace=True)
+        self.flare_index.set_index("timestamp", inplace=True)
         self.flare_index.sort_index(inplace=True)
 
         super().__init__(
+            sdo_data_root_path=sdo_data_root_path,
             index_path=index_path,
             time_delta_input_minutes=time_delta_input_minutes,
             time_delta_target_minutes=time_delta_target_minutes,
@@ -70,7 +72,7 @@ class SolarFlareDataset(HelioNetCDFDataset):
     def _get_index_data(self, idx: int) -> tuple[dict, dict]:
         data, metadata = super()._get_index_data(idx)
 
-        reference_timestep = self.valid_indices[idx]
-        data["label"] = self.index.loc[reference_timestep, "label_max"]
+        reference_timestamp = self.valid_indices[idx]
+        data["label"] = self.index.loc[reference_timestamp, "label_max"]
 
         return data, metadata
