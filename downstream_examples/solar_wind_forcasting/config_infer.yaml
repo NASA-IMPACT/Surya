@@ -1,9 +1,8 @@
 job_id: solar-wind_surya
 data:
   # Use this to point at the paths of HelioFM data indices
-  sdo_data_root_path: /nobackupnfs1/sroy14/processed_data/Helio/nc
-  train_data_path: ./assets/train_index_surya_1_0.csv
-  valid_data_path: ./assets/valid_index_surya_1_0.csv
+  sdo_data_root_path: ./assets/infer_data
+  train_data_path: ./assets/infer_data/infer_index_surya_1_0.csv
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
   time_delta_input_minutes: [0]
   time_delta_target_minutes: +60
@@ -14,8 +13,7 @@ data:
   scalers_path: ./assets/scalers.yaml
   #### Put your donwnstream (DS) specific parameters below this line
   # solarwind_index: "./assets/Surya-bench-solarwind/solarwind_train.csv"
-  solarwind_train_index: "./assets/Surya-bench-solarwind/solarwind_train.csv"
-  solarwind_valid_index: "./assets/Surya-bench-solarwind/solarwind_valid.csv"
+  solarwind_train_index: "./assets/Surya-bench-solarwind/validation.csv"
   ds_time_column: "timestamp"
   ds_time_delta_in_out: "4D"
   ds_time_tolerance: "1h"

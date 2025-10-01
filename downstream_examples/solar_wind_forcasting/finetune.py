@@ -222,11 +222,6 @@ def evaluate_model(dataloader, epoch, model, device, run, config, criterion):
             running_loss += loss.item()
             num_batches += 1
 
-            if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
-                print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
-                # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run, {"val_loss": reduced_loss.item()})
-
             diff = outputs - target
             abs_err_sum += torch.abs(diff).sum()
             sq_err_sum += (diff**2).sum()
@@ -264,6 +259,7 @@ def evaluate_model(dataloader, epoch, model, device, run, config, criterion):
                 "valid/loss": avg_loss,
                 "valid/total": int(total_n.item()),
             },
+            step=epoch,
         )
 
     return mae, rmse, r2, avg_loss
@@ -373,8 +369,6 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
     if torch.cuda.is_available():
         print0("GPU is available")
         device = torch.cuda.current_device()
-    else:
-        raise Exception("Training pipeline is not configured to run on CPU.")
 
     pretrained_path = config["pretrained_path"]
 
@@ -382,7 +376,7 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
         if (pretrained_path is not None) and os.path.exists(pretrained_path):
             print0(f"Loading pretrained model from {pretrained_path}.")
             model_state = model.state_dict()
-            checkpoint_state = torch.load(pretrained_path, weights_only=True)
+            checkpoint_state = torch.load(pretrained_path, weights_only=True, map_location="cpu")
 
             filtered_checkpoint_state = {
                 k: v
@@ -511,7 +505,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
             # entity="nasa-impact",
             name=f'[JOB: {job_id}] Solar wind {config["job_id"]}',
             config=config,
-            mode="online",
+            mode="offline",
         )
         # wandb.save(args.config_path)
 
@@ -542,6 +536,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     device = local_rank
 
     scaler = GradScaler()
+    total_steps = 0
 
     print(f"Starting training for {config['optimizer']['max_epochs']} epochs.")
     for epoch in range(config["optimizer"]["max_epochs"]):
@@ -561,6 +556,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
             leave=False,
         ) as t:
             for i, (batch, metadata) in t:
+                total_steps += 1
                 batch["ts"] = batch["ts"].permute(0, 2, 1, 3, 4).to(local_rank)
                 batch["target"] = batch["target"].to(local_rank)
                 batch["ds_time"] = batch["ds_time"].to(local_rank, dtype=torch.float32)
@@ -596,7 +592,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
                 # Print/log only from rank 0
                 if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
                     print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
-                    log(run, {"train_loss": reduced_loss.item()})
+                    log(run, {"train_loss": reduced_loss.item()}, step=total_steps)
 
                 if (i + 1) % config["save_wt_after_iter"] == 0:
                     print0(f"Reached save_wt_after_iter ({config['save_wt_after_iter']}).")
@@ -607,7 +603,8 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         dist.all_reduce(running_batch, op=dist.ReduceOp.SUM)
 
         if distributed.is_main_process():
-            log(run, {"epoch_loss": running_loss.item() / running_batch.item()})
+            log(run, {"epoch_loss": running_loss.item() / running_batch.item()}, step=epoch)
+            log(run, {"step": total_steps}, step=epoch)
 
         fp = os.path.join(config["path_experiment"], f"epoch_{epoch}.pth")
         save_model_singular(model, fp, parallelism=config["parallelism"])
