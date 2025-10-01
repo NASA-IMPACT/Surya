@@ -223,6 +223,7 @@ class HelioNetCDFDataset(Dataset):
         phase="train",
         pooling: int | None = None,
         random_vert_flip: bool = False,
+        sdo_data_root_path: str = None,
     ):
         self.scalers = scalers
         self.phase = phase
@@ -234,7 +235,7 @@ class HelioNetCDFDataset(Dataset):
         self.use_latitude_in_learned_flow = use_latitude_in_learned_flow
         self.pooling = pooling if pooling is not None else 1
         self.random_vert_flip = random_vert_flip
-
+        self.sdo_data_root_path = sdo_data_root_path
         if self.channels is None:
             # AIA + HMI channels
             self.channels = [
@@ -479,6 +480,9 @@ class HelioNetCDFDataset(Dataset):
             Numpy array of shape (C, H, W).
         """
         self.logger.info(f"Reading file {filepath}.")
+        
+        if self.sdo_data_root_path and not os.path.isabs(filepath):
+            filepath = os.path.join(self.sdo_data_root_path, filepath)
         
         with xr.open_dataset(
             filepath, engine="h5netcdf", chunks=None, cache=False,

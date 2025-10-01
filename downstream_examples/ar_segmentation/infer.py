@@ -145,16 +145,11 @@ def get_dataloader(config, scalers, data_type="test",num_samples=3):
     """
     Create dataloader for inference
     """
-    if data_type == "test":
-        index_path = config["data"]["valid_data_path"]  # Use validation data for testing
-        ar_index_paths = config["data"]["ar_index_test"]
-    elif data_type == "valid":
-        index_path = config["data"]["valid_data_path"]
-        ar_index_paths = config["data"]["ar_index_valid"]
-    else:
-        raise ValueError(f"Unknown data_type: {data_type}")
+
+    index_path = config["data"]["valid_data_path"]
 
     dataset = HelioNetCDFDataset(
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
         index_path=index_path,
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
@@ -165,12 +160,14 @@ def get_dataloader(config, scalers, data_type="test",num_samples=3):
         phase="valid",
     )
 
+    assert len(dataset) > 0, "No data found"
+
     random_ids = (
-        torch.randperm(len(dataset) - 1)[: num_samples] + 1
+        torch.randperm(len(dataset) - 1)[: num_samples-1] + 1
     )
 
     dataloader = DataLoader(
-        dataset=Subset(dataset, random_ids.tolist()),
+        dataset=Subset(dataset, [0] + random_ids.tolist()),
         batch_size=1,
         num_workers=config["data"]["num_data_workers"],
         prefetch_factor=None,
@@ -540,7 +537,7 @@ def main():
     parser = argparse.ArgumentParser("AR Segmentation Inference")
     parser.add_argument(
         "--config_path",
-        default="./config.yaml",
+        default="./config_infer.yaml",
         type=str,
         help="Path to the configuration YAML file.",
     )

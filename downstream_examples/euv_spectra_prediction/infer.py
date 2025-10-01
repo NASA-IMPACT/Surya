@@ -63,45 +63,36 @@ def load_model(config, checkpoint_path, device):
 
 
 def get_dataloader(config, scalers, data_type="test", num_samples=3):
-    """
-    Create dataloader for inference
-    """
-    # Determine which time column and data path to use based on data_type
-    if data_type == "test":
-        ds_time_column = "test_time"
-        data_path = config["data"].get("valid_solar_data_path", config["data"]["train_solar_data_path"])
-    elif data_type == "valid":
-        ds_time_column = "val_time"
-        data_path = config["data"].get("valid_solar_data_path", config["data"]["train_solar_data_path"])
-    else:  # train
-        ds_time_column = "train_time"
-        data_path = config["data"]["train_solar_data_path"]
-    
+
     dataset = EVEDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
-        index_path=config["data"]["train_data_path"],
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
+        index_path=config["data"]["infer_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
         n_input_timestamps=config["model"]["time_embedding"]["time_dim"],
         rollout_steps=config["rollout_steps"],
         channels=config["data"]["channels"],
-        drop_hmi_probablity=config.get("drop_hmi_probablity", 0),
-        num_mask_aia_channels=config.get("num_mask_aia_channels", 0),
-        use_latitude_in_learned_flow=config.get("use_latitude_in_learned_flow", False),
+        drop_hmi_probablity=config["drop_hmi_probablity"],
+        num_mask_aia_channels=config["num_mask_aia_channels"],
+        use_latitude_in_learned_flow=config["use_latitude_in_learned_flow"],
         scalers=scalers,
-        phase="train",  # Use train phase for inference to access all data
-        #### Put your downstream (DS) specific parameters below this line
-        ds_eve_index_path=data_path,
-        ds_time_column=ds_time_column,
-        ds_time_tolerance="10min",
+        phase="train",
+        #### Put your donwnstream (DS) specific parameters below this line
+        ds_eve_index_path=config["data"]["infer_solar_data_path"],
+        ds_time_column="val_time",
+        ds_time_tolerance="6m",
         ds_match_direction="forward",
     )
 
-    # Select random samples for visualization
-    random_ids = torch.randperm(len(dataset))[:num_samples]
+    assert len(dataset) > 0, "No data found"
+
+    random_ids = (
+        torch.randperm(len(dataset) - 1)[: num_samples-1] + 1
+    )
 
     dataloader = DataLoader(
-        dataset=Subset(dataset, random_ids.tolist()),
+        dataset=Subset(dataset, [0] + random_ids.tolist()),
         batch_size=1,
         num_workers=config["data"]["num_data_workers"],
         prefetch_factor=None,
@@ -278,7 +269,7 @@ def main():
     parser = argparse.ArgumentParser("EUV Spectra Prediction Inference")
     parser.add_argument(
         "--config_path",
-        default="./config.yaml",
+        default="./config_infer.yaml",
         type=str,
         help="Path to the configuration YAML file.",
     )

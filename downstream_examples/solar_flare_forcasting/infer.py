@@ -68,7 +68,8 @@ def get_dataloader(config, scalers, data_type="test",num_samples=3):
 
     dataset = SolarFlareDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
-        index_path=config["data"]["train_data_path"],
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
+        index_path=config["data"]["valid_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
         n_input_timestamps=config["model"]["time_embedding"]["time_dim"],
@@ -78,19 +79,21 @@ def get_dataloader(config, scalers, data_type="test",num_samples=3):
         num_mask_aia_channels=config["num_mask_aia_channels"],
         use_latitude_in_learned_flow=config["use_latitude_in_learned_flow"],
         scalers=scalers,
-        phase="train",
+        phase="valid",
         #### Put your donwnstream (DS) specific parameters below this line
         flare_index_path=config["data"]["flare_data_path"],
         pooling=config["data"]["pooling"],
         random_vert_flip=False,
     )
+    
+    assert len(dataset) > 0, "No data found"
 
     random_ids = (
-        torch.randperm(len(dataset) - 1)[: num_samples] +1
+        torch.randperm(len(dataset) - 1)[: num_samples-1] + 1
     )
 
     dataloader = DataLoader(
-        dataset=Subset(dataset, random_ids.tolist()),
+        dataset=Subset(dataset, [0] + random_ids.tolist()),
         batch_size=1,
         num_workers=config["data"]["num_data_workers"],
         prefetch_factor=None,
@@ -171,7 +174,7 @@ def main():
     parser = argparse.ArgumentParser("AR Segmentation Inference")
     parser.add_argument(
         "--config_path",
-        default="./config.yaml",
+        default="./config_infer.yaml",
         type=str,
         help="Path to the configuration YAML file.",
     )

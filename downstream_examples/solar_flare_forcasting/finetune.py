@@ -321,8 +321,6 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
     if torch.cuda.is_available():
         print0("GPU is available")
         device = torch.cuda.current_device()
-    else:
-        raise Exception("Training pipeline is not configured to run on CPU.")
 
     pretrained_path = config["pretrained_path"]
 
@@ -330,7 +328,7 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
         if (pretrained_path is not None) and os.path.exists(pretrained_path):
             print0(f"Loading pretrained model from {pretrained_path}.")
             model_state = model.state_dict()
-            checkpoint_state = torch.load(pretrained_path, weights_only=True)
+            checkpoint_state = torch.load(pretrained_path, weights_only=True, map_location="cpu")
 
             filtered_checkpoint_state = {
                 k: v
@@ -369,6 +367,7 @@ def get_dataloaders(config, scalers):
 
     train_dataset = SolarFlareDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
         index_path=config["data"]["train_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
@@ -389,6 +388,7 @@ def get_dataloaders(config, scalers):
 
     valid_dataset = SolarFlareDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
         index_path=config["data"]["train_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],

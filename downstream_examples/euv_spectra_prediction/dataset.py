@@ -74,6 +74,7 @@ class EVEDSDataset(HelioNetCDFDataset):
         ds_time_column: str = None,  # choose "train_time", "val_time" or "test_time", the spectra will be chose accordingly.
         ds_time_tolerance: str = None,
         ds_match_direction: str = "forward",
+        sdo_data_root_path: str = None,        
     ):
 
         ## Initialize parent class
@@ -88,6 +89,7 @@ class EVEDSDataset(HelioNetCDFDataset):
             use_latitude_in_learned_flow=use_latitude_in_learned_flow,
             channels=channels,
             phase=phase,
+            sdo_data_root_path=sdo_data_root_path,
         )
 
         # Load ds index and find intersection with HelioFM index

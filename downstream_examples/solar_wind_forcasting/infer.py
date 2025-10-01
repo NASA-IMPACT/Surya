@@ -65,6 +65,7 @@ def get_dataloader(config, scalers, data_type="test", num_samples=3):
     """
     dataset = WindSpeedDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
+        sdo_data_root_path=config["data"]["sdo_data_root_path"],
         index_path=config["data"]["train_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
@@ -77,7 +78,7 @@ def get_dataloader(config, scalers, data_type="test", num_samples=3):
         scalers=scalers,
         phase="train",
         #### Put your downstream (DS) specific parameters below this line
-        ds_solar_wind_path=config["data"]["solarwind_index"],
+        ds_solar_wind_path=config["data"]["solarwind_train_index"],
         ds_time_column=config["data"]["ds_time_column"],
         ds_time_delta_in_out=config["data"]["ds_time_delta_in_out"],
         ds_time_tolerance=config["data"]["ds_time_tolerance"],
@@ -86,12 +87,14 @@ def get_dataloader(config, scalers, data_type="test", num_samples=3):
         ds_scaler=config["data"]["ds_scaler"],
     )
 
+    assert len(dataset) > 0, "No data found"
+    
     random_ids = (
-        torch.randperm(len(dataset) - 1)[: num_samples] + 1
+        torch.randperm(len(dataset) - 1)[: num_samples-1] + 1
     )
 
     dataloader = DataLoader(
-        dataset=Subset(dataset, random_ids.tolist()),
+        dataset=Subset(dataset, [0] + random_ids.tolist()),
         batch_size=1,
         num_workers=config["data"]["num_data_workers"],
         prefetch_factor=None,
@@ -149,8 +152,9 @@ def infer_single_sample(
     timestamps_targets_list = []
     
     with torch.no_grad():
+        print(f"Running inference on {len(validation_loader.dataset)} samples")
         for i, (batch, metadata) in enumerate(validation_loader):
-
+            print(f"Running inference on {i}th sample")
             if gpu:
                 batch = {k: v.to(local_rank) for k, v in batch.items()}
             with torch.amp.autocast(device_type=device_type, dtype=dtype):
@@ -211,7 +215,7 @@ def main():
     parser = argparse.ArgumentParser("Solar Wind Speed Inference")
     parser.add_argument(
         "--config_path",
-        default="./config.yaml",
+        default="./config_infer.yaml",
         type=str,
         help="Path to the configuration YAML file.",
     )
