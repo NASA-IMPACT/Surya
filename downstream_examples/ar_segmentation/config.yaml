@@ -41,7 +41,6 @@ model:
   init_weights: false
   checkpoint_layers: []
   ensemble: null # Set to integer or null
-  in_channels: 13  # For unet
   unet_embed_dim: 128 # For unet
   unet_blocks: 3 # For unet
   finetune: True
@@ -65,6 +64,10 @@ model:
     eps: 1e-6
   bce:
     pos_weight: 1
+
+adapter:
+  use_channel_adapter: False
+  channels: ['aia94', 'aia131', 'aia171']
 
 optimizer:
   warm_up_steps: 0 #2000
