@@ -159,7 +159,7 @@ def evaluate_model(dataloader, epoch, model, device, run, criterion):
             if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
                 print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
                 # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run, {"val_loss": reduced_loss.item()})
+                log(run, {"val_loss": reduced_loss.item()}, step=epoch)
 
             diff = outputs - target
             abs_err_sum += torch.abs(diff).sum()
@@ -198,6 +198,7 @@ def evaluate_model(dataloader, epoch, model, device, run, criterion):
                 "valid/loss": avg_loss,
                 "valid/total": int(total_n.item()),
             },
+            step=epoch,
         )
 
     return mae, rmse, r2, avg_loss
@@ -477,7 +478,9 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
     train_loader, valid_loader = get_dataloaders(config, scalers)
     model = get_model(config, run)
-    model = apply_peft_lora(model, config)
+
+    if config["model"]["use_lora"]:
+        model = apply_peft_lora(model, config)
 
     model.to(rank)
 
@@ -499,7 +502,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     device = local_rank
 
     scaler = GradScaler()
-
+    total_steps = 0
     print(f"Starting training for {config['optimizer']['max_epochs']} epochs.")
     for epoch in range(config["optimizer"]["max_epochs"]):
         print(f"Epoch {epoch} of {config['optimizer']['max_epochs']}")
@@ -508,7 +511,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         running_batch = torch.tensor(0, device=device)
 
         for i, (batch, metadata) in enumerate(train_loader):
-
+            total_steps += 1
             if config["iters_per_epoch_train"] == i:
                 break
 
@@ -537,7 +540,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
             if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
                 print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
                 # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run, {"train_loss": reduced_loss.item()})
+                log(run, {"train_loss": reduced_loss.item()}, step=total_steps)
 
             if (i + 1) % config["save_wt_after_iter"] == 0:
                 print0(f"Reached save_wt_after_iter ({config['save_wt_after_iter']}).")
@@ -548,7 +551,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         dist.all_reduce(running_batch, op=dist.ReduceOp.SUM)
 
         if distributed.is_main_process():
-            log(run, {"epoch_loss": running_loss.item() / running_batch.item()})
+            log(run, {"epoch_loss": running_loss.item() / running_batch.item()}, step=epoch)
 
         fp = os.path.join(config["path_experiment"], f"epoch_{epoch}.pth")
         save_model_singular(model, fp, parallelism=config["parallelism"])

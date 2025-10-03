@@ -51,10 +51,10 @@ class ArDSDataset(HelioNetCDFDataset):
         self.ar_index = pd.concat(all_data, ignore_index=True)
         self.ar_index = self.ar_index.loc[self.ar_index["present"] == 1, :]
 
-        self.ar_index["timestep"] = pd.to_datetime(self.ar_index["timestep"]).values.astype(
+        self.ar_index["timestamp"] = pd.to_datetime(self.ar_index["timestamp"]).values.astype(
             "datetime64[ns]"
         )
-        self.ar_index.sort_values("timestep", inplace=True)
+        self.ar_index.sort_values("timestamp", inplace=True)
 
         # Create HelioFM valid indices and find closest match to DS index
         self.ar_valid_indices = pd.DataFrame({"valid_indices": self.valid_indices}).sort_values(
@@ -65,7 +65,7 @@ class ArDSDataset(HelioNetCDFDataset):
             self.ar_index,
             self.ar_valid_indices,
             how="inner",
-            left_on="timestep",
+            left_on="timestamp",
             right_on="valid_indices",
         )
 
@@ -104,8 +104,13 @@ class ArDSDataset(HelioNetCDFDataset):
         )
         base_dictionary["ts"] = np.stack([base_dictionary["ts"]], axis=1)
         file_path = self.ar_valid_indices.iloc[idx]["file_path"]
+
+        file_path = os.path.join("./assets/surya-bench-ar-segmentation", file_path)
+
         try:
-            mask = torch.load(file_path, map_location="cpu", weights_only=False)
+            with h5py.File(file_path, "r") as f:
+                mask = torch.from_numpy(f["union_with_intersect"][...])
+
         except Exception as e:
             print(f"Error loading mask from {file_path}: {e}")
             raise e
