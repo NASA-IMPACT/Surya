@@ -491,6 +491,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
         if distributed.is_main_process():
             log(run, {"epoch_loss": running_loss.item() / running_batch.item()}, step=epoch)
+            log(run, {"step": total_steps}, step=epoch)
 
         fp = os.path.join(config["path_experiment"], f"epoch_{epoch}.pth")
         save_model_singular(model, fp, parallelism=config["parallelism"])
