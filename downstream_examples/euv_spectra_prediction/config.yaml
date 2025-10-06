@@ -3,8 +3,8 @@ data:
   sdo_data_root_path: /nobackupnfs1/sroy14/processed_data/Helio/nc
   train_data_path: ./assets/train_index_surya_1_0.csv
   valid_data_path: ./assets/valid_index_surya_1_0.csv
-  train_solar_data_path : ./assets/euv-spectra/AIA_EVE_temporally_stratified.nc
-  valid_solar_data_path : ./assets/euv-spectra/AIA_EVE_temporally_stratified.nc
+  train_solar_data_path : ./assets/euv-spectra/archive/AIA_EVE_temporally_stratified.nc
+  valid_solar_data_path : ./assets/euv-spectra/archive/AIA_EVE_temporally_stratified.nc
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
   time_delta_input_minutes: [0]
   time_delta_target_minutes: +60
@@ -57,7 +57,7 @@ optimizer:
   learning_rate: 0.0001
   min_lr: 0.00001
 use_latitude_in_learned_flow: false
-pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
+pretrained_path: ./assets/surya.366m.v1.pt
 
 num_mask_aia_channels: 0
 drop_hmi_probablity: 0.0
@@ -68,8 +68,8 @@ visualization_samples: 3
 rollout_steps: 0
 save_wt_after_iter: 1000
 path_experiment: checkpoints
-iters_per_epoch_train: 2
-iters_per_epoch_valid: 2
+iters_per_epoch_train: 2000
+iters_per_epoch_valid: 200
 iters_grad_accum: 1
 dtype: float32
 parallelism: "ddp" # Valid options: "ddp" and "fsdp"

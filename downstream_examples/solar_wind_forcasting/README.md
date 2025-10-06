@@ -6,7 +6,7 @@ The model predicts solar wind speed based on solar observations from the Solar D
 
 Ensure the following dependencies are installed:
 
-### 🚀 Example Usage
+### 🚀 Training
 
 For training run the below code after building the environment
 

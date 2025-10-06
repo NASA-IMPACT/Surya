@@ -94,5 +94,5 @@ dtype: float32
 parallelism: "ddp" # Valid options: "ddp" and "fsdp"
 
 # Finetuning config fields
-pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
+pretrained_path: ./assets/surya.366m.v1.pt
 # freeze_backbone: False

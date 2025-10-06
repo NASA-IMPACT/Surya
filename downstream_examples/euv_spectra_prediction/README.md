@@ -6,7 +6,7 @@ The model predicts extreme ultraviolet (EUV) irradiance spectra from NASA's EVE 
 
 Ensure the following dependencies are installed:
 
-### 🚀 Example Usage
+### 🚀 Training
 
 For training run the below code after building the environment
 

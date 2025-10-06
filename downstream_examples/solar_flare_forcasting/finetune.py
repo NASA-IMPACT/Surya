@@ -206,15 +206,11 @@ def evaluate_model(
             running_loss += loss.item()
             num_batches += 1
 
-            if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
-                print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
-                # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run, {"val_loss": reduced_loss.item()})
 
     classifier_result = metrics_classifier.compute_and_reset()
     # Print and log
     if distributed.is_main_process():
-        log(run, {f"valid/{key}": classifier_result[key] for key in metrics_classifier.metrics})
+        log(run, {f"valid/{key}": classifier_result[key] for key in metrics_classifier.metrics}, step=epoch)
 
     return classifier_result
 
@@ -246,7 +242,7 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
     """
 
     if torch.distributed.is_initialized() and distributed.is_main_process():
-        print("Creating the model.")
+        print0("Creating the model.")
 
     match config["model"]["model_type"]:
         case "spectformer":
@@ -380,7 +376,7 @@ def get_dataloaders(config, scalers):
         scalers=scalers,
         phase="train",
         #### Put your donwnstream (DS) specific parameters below this line
-        flare_index_path=config["data"]["flare_data_path"],
+        flare_index_path=config["data"]["train_flare_data_path"],
         pooling=config["data"]["pooling"],
         random_vert_flip=config["data"]["random_vert_flip"],
     )
@@ -389,7 +385,7 @@ def get_dataloaders(config, scalers):
     valid_dataset = SolarFlareDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
         sdo_data_root_path=config["data"]["sdo_data_root_path"],
-        index_path=config["data"]["train_data_path"],
+        index_path=config["data"]["valid_data_path"],
         time_delta_input_minutes=config["data"]["time_delta_input_minutes"],
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
         n_input_timestamps=config["model"]["time_embedding"]["time_dim"],
@@ -399,9 +395,9 @@ def get_dataloaders(config, scalers):
         num_mask_aia_channels=config["num_mask_aia_channels"],
         use_latitude_in_learned_flow=config["use_latitude_in_learned_flow"],
         scalers=scalers,
-        phase="train",
+        phase="valid",
         #### Put your donwnstream (DS) specific parameters below this line
-        flare_index_path=config["data"]["flare_data_path"],
+        flare_index_path=config["data"]["valid_flare_data_path"],
         pooling=config["data"]["pooling"],
         random_vert_flip=False,
     )
@@ -435,7 +431,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
     run = None
     local_rank, rank = init_ddp(use_gpu)
-    print(f"RANK: {rank}; LOCAL_RANK: {local_rank}.")
+    print0(f"RANK: {rank}; LOCAL_RANK: {local_rank}.")
     scalers = build_scalers(info=config["data"]["scalers"])
     os.makedirs(config["path_experiment"], exist_ok=True)
 
@@ -443,8 +439,8 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         # https://docs.wandb.ai/guides/track/log/distributed-training
 
         job_id = os.getenv("PBS_JOBID")
-        print(f"Job ID: {job_id}")
-        print(f"local_rank: {local_rank}, rank: {rank}: WANDB")
+        print0(f"Job ID: {job_id}")
+        print0(f"local_rank: {local_rank}, rank: {rank}: WANDB")
 
         run = wandb.init(
             project=config["wandb_project"],
@@ -482,16 +478,16 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     metrics_classifier = DistributedClassificationMetrics(threshold=0.5)
 
     scaler = GradScaler()
-
-    print(f"Starting training for {config['optimizer']['max_epochs']} epochs.")
+    total_steps = 0
+    print0(f"Starting training for {config['optimizer']['max_epochs']} epochs.")
     for epoch in range(config["optimizer"]["max_epochs"]):
-        print(f"Epoch {epoch} of {config['optimizer']['max_epochs']}")
+        print0(f"Epoch {epoch} of {config['optimizer']['max_epochs']}")
         model.train()
         running_loss = torch.tensor(0.0, device=device)
         running_batch = torch.tensor(0, device=device)
 
         for i, (batch, metadata) in enumerate(train_loader):
-
+            total_steps += 1
             if config["iters_per_epoch_train"] == i:
                 break
 
@@ -522,9 +518,9 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
             # Print/log only from rank 0
             if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
-                print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
-                # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run, {"train_loss": reduced_loss.item()})
+                print0(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
+                # print0(f"Batch {i}, Loss: {reduced_loss.item()}")
+                log(run, {"train_loss": reduced_loss.item()}, step=total_steps)
 
             if (i + 1) % config["save_wt_after_iter"] == 0:
                 print0(f"Reached save_wt_after_iter ({config['save_wt_after_iter']}).")
@@ -536,8 +532,9 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
         classifier_result = metrics_classifier.compute_and_reset()
         if distributed.is_main_process():
-            log(run, {"epoch_loss": running_loss.item() / running_batch.item()})
-            log(run, {f"train/{key}": classifier_result[key] for key in metrics_classifier.metrics})
+            log(run, {"epoch_loss": running_loss.item() / running_batch.item()}, step=epoch)
+            log(run, {f"train/{key}": classifier_result[key] for key in metrics_classifier.metrics}, step=epoch)
+            log(run, {"step": total_steps}, step=epoch)
 
         fp = os.path.join(config["path_experiment"], f"epoch_{epoch}.pth")
         save_model_singular(model, fp, parallelism=config["parallelism"])

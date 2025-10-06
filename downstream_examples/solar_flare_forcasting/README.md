@@ -7,7 +7,7 @@ The output includes binary labels based on both the **maximum flare class** and 
 
 Ensure the following dependencies are installed:
 
-### 🚀 Example Usage
+### 🚀 Training
 
 For training run the below code after building the environment
 

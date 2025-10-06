@@ -14,8 +14,8 @@ data:
   scalers_path: ./assets/scalers.yaml
   #### Put your donwnstream (DS) specific parameters below this line
   # solarwind_index: "./assets/Surya-bench-solarwind/solarwind_train.csv"
-  solarwind_train_index: "./assets/Surya-bench-solarwind/solarwind_train.csv"
-  solarwind_valid_index: "./assets/Surya-bench-solarwind/solarwind_valid.csv"
+  solarwind_train_index: "./assets/Surya-bench-solarwind/train.csv"
+  solarwind_valid_index: "./assets/Surya-bench-solarwind/validation.csv"
   ds_time_column: "timestamp"
   ds_time_delta_in_out: "4D"
   ds_time_tolerance: "1h"
@@ -75,7 +75,7 @@ metrics:
 
 optimizer:
   warm_up_steps: 0 #2000
-  max_epochs: 2
+  max_epochs: 20
   learning_rate: 0.001
   min_lr: 0.000001
 use_latitude_in_learned_flow: false
@@ -96,5 +96,5 @@ dtype: float32
 parallelism: "ddp" # Valid options: "ddp" and "fsdp"
 
 # Finetuning config fields
-pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
+pretrained_path: ./assets/surya.366m.v1.pt
 # freeze_backbone: False

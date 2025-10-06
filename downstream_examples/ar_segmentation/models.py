@@ -13,6 +13,21 @@ from typing import Callable
 from functools import partial
 
 
+class ChannelAdapter(nn.Module):
+    def __init__(self, model, num_data_chans, time_dim, out_chans: int=13,):
+        super().__init__()
+        self.num_data_chans = num_data_chans
+        self.out_chans = out_chans
+        self.time_dim = time_dim
+        
+        self.adapter = nn.Conv3d(self.num_data_chans, self.out_chans, kernel_size=1, padding=0)
+        self.model = model
+
+    def forward(self, batch: torch.Tensor) -> torch.Tensor:
+        batch['ts'] = self.adapter(batch['ts'])
+        x = self.model(batch)
+        return x
+
 class HelioSpectformer1D(HelioSpectFormer):
     def __init__(
         self,

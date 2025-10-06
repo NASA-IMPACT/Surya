@@ -11,7 +11,7 @@ data:
   batch_size: 1
   num_data_workers: 8
   prefetch_factor: 2
-  scalers_path: ../../data/Surya-1.0/scalers.yaml
+  scalers_path: ./assets/scalers.yaml
 
 model:
   model_type: spectformer_lora # Options: unet, spectformer, persistence, flow
@@ -82,5 +82,5 @@ dtype: bfloat16
 parallelism: "ddp" # Valid options: "ddp" and "fsdp"
 
 # Finetuning config fields
-pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
+pretrained_path: ./assets/surya.366m.v1.pt
 freeze_backbone: False

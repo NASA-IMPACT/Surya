@@ -1,8 +1,10 @@
 job_id: solar_flare_forcasting
 data:
-  train_data_path: ./assets/sdo_test.csv
-  valid_data_path: ./assets/sdo_validate.csv
-  flare_data_path: ./assets/surya-bench-flare-forecasting/flare_cls_p1_1h.csv
+  sdo_data_root_path: /nobackupnfs1/sroy14/processed_data/Helio/nc
+  train_data_path: ./assets/train_index_surya_1_0.csv
+  valid_data_path: ./assets/valid_index_surya_1_0.csv
+  train_flare_data_path: ./assets/surya-bench-flare-forecasting/train.csv
+  valid_flare_data_path: ./assets/surya-bench-flare-forecasting/validation.csv
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
   time_delta_input_minutes: [-60,0]
   time_delta_target_minutes: +60
@@ -12,7 +14,7 @@ data:
   prefetch_factor: 2
   pooling: 1
   random_vert_flip: false
-  scalers_path: ../../data/Surya-1.0/scalers.yaml
+  scalers_path: ./assets/scalers.yaml
 
 model:
   model_type: spectformer # New model type for PEFT LoRA finetuning
@@ -77,7 +79,7 @@ optimizer:
   min_lr: 0.00001
 
 use_latitude_in_learned_flow: false
-pretrained_path: ../../data/Surya-1.0/surya.366m.v1.pt
+pretrained_path: ./assets/surya.366m.v1.pt
 # from_checkpoint: <PATH TO BEST CHECKPOINT linembed-input1_0.1>
 loss_weights: [] # [] or list of weights per channel
 rollout_steps: 0

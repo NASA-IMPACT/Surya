@@ -12,13 +12,13 @@ data:
   batch_size: 1
   num_data_workers: 8
   prefetch_factor: 2
-  scalers_path: ../../data/Surya-1.0/scalers.yaml
+  scalers_path: ./assets/scalers.yaml
   #### Put your donwnstream (DS) specific parameters below this line
-  ar_index_train: ["./assets/ar_2011.csv","./assets/ar_2012.csv","./assets/ar_2013.csv"]
-  ar_index_valid: ["./assets/ar_2014.csv"]
-  ar_index_test: ["./assets/ar_2014.csv"]
+  ar_index_train: ["./assets/surya-bench-ar-segmentation/train.csv"]
+  ar_index_valid: ["./assets/surya-bench-ar-segmentation/validation.csv"]
+  ar_index_test: ["./assets/surya-bench-ar-segmentation/test.csv"]
 model:
-  model_type: spectformer_lora # Options: unet, spectformer, persistence, flow
+  model_type: spectformer_lora # Options: unet, spectformer_lora,
   # Spectformer options
   img_size: 4096
   patch_size: 16
@@ -41,6 +41,8 @@ model:
   init_weights: false
   checkpoint_layers: []
   ensemble: null # Set to integer or null
+  unet_embed_dim: 128 # For unet
+  unet_blocks: 3 # For unet
   finetune: True
   # Finetuning config fields
   ft_unembedding_type: "linear" # "linear" or "perceiver"
@@ -62,6 +64,10 @@ model:
     eps: 1e-6
   bce:
     pos_weight: 1
+
+adapter:
+  use_channel_adapter: False
+  channels: ['aia94', 'aia131', 'aia171']
 
 optimizer:
   warm_up_steps: 0 #2000

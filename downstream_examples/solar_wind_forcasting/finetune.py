@@ -149,7 +149,7 @@ def custom_collate_fn(batch):
         collated_data = torch.utils.data.default_collate(data_batch)
     except TypeError as e:
         # If default_collate fails (e.g., due to incompatible types), return the data batch as-is
-        print(e)
+        print0(e)
         collated_data = data_batch
 
     # Handle metadata collation
@@ -246,7 +246,7 @@ def evaluate_model(dataloader, epoch, model, device, run, config, criterion):
 
     # Print and log
     if distributed.is_main_process():
-        print(
+        print0(
             f"Validation — MAE: {mae:.4f}  RMSE: {rmse:.4f}  R2: {r2:.4f}  "
             f"Avg Loss: {avg_loss:.4f}  Samples: {int(total_n.item())}"
         )
@@ -293,7 +293,7 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
     """
 
     if torch.distributed.is_initialized() and distributed.is_main_process():
-        print("Creating the model.")
+        print0("Creating the model.")
 
     match config["model"]["model_type"]:
         case "spectformer":
@@ -454,10 +454,12 @@ def get_dataloaders(config, scalers):
         phase="valid",
         #### Put your donwnstream (DS) specific parameters below this line
         ds_solar_wind_path=config["data"]["solarwind_valid_index"],
-        ds_time_column="Epoch",
-        ds_time_delta_in_out="4D",
-        ds_time_tolerance="1h",
-        ds_match_direction="forward",
+        ds_time_column=config["data"]["ds_time_column"],
+        ds_time_delta_in_out=config["data"]["ds_time_delta_in_out"],
+        ds_time_tolerance=config["data"]["ds_time_tolerance"],
+        ds_match_direction=config["data"]["ds_match_direction"],
+        ds_normalize=config["data"]["ds_normalize"],
+        ds_scaler=config["data"]["ds_scaler"],
     )
     print0(f"Total dataset size: {len(valid_dataset)}")
     # print0(f"Total dataset size: {len(dataset)}")
@@ -489,7 +491,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
     run = None
     local_rank, rank = init_ddp(use_gpu)
-    print(f"RANK: {rank}; LOCAL_RANK: {local_rank}.")
+    print0(f"RANK: {rank}; LOCAL_RANK: {local_rank}.")
     scalers = build_scalers(info=config["data"]["scalers"])
     os.makedirs(config["path_experiment"], exist_ok=True)
 
@@ -497,8 +499,8 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         # https://docs.wandb.ai/guides/track/log/distributed-training
 
         job_id = os.getenv("PBS_JOBID")
-        print(f"Job ID: {job_id}")
-        print(f"local_rank: {local_rank}, rank: {rank}: WANDB")
+        print0(f"Job ID: {job_id}")
+        print0(f"local_rank: {local_rank}, rank: {rank}: WANDB")
 
         run = wandb.init(
             project=config["wandb_project"],
@@ -538,9 +540,9 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     scaler = GradScaler()
     total_steps = 0
 
-    print(f"Starting training for {config['optimizer']['max_epochs']} epochs.")
+    print0(f"Starting training for {config['optimizer']['max_epochs']} epochs.")
     for epoch in range(config["optimizer"]["max_epochs"]):
-        print(f"Epoch {epoch} of {config['optimizer']['max_epochs']}")
+        print0(f"Epoch {epoch} of {config['optimizer']['max_epochs']}")
         model.train()
         running_loss = torch.tensor(0.0, device=device)
         running_batch = torch.tensor(0, device=device)
@@ -591,7 +593,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
                 # Print/log only from rank 0
                 if i % config["wandb_log_train_after"] == 0 and distributed.is_main_process():
-                    print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
+                    print0(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
                     log(run, {"train_loss": reduced_loss.item()}, step=total_steps)
 
                 if (i + 1) % config["save_wt_after_iter"] == 0:
