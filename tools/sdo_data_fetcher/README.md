@@ -1,148 +1,133 @@
 # 🌞 SDO Real-Time Data Fetcher
 
-A lightweight Python tool for fetching real-time Solar Dynamics Observatory (SDO) data, designed to complement the Surya foundation model's data pipeline.
+A lightweight Python tool for fetching live Solar Dynamics Observatory (SDO) browse imagery for Surya-related experimentation and monitoring.
 
 ## Overview
 
-While Surya uses preprocessed SDO data from HuggingFace, this tool enables researchers to:
-- Fetch the **latest real-time** SDO observations (updated every 12 seconds)
-- Download specific wavelengths for custom analysis
-- Monitor solar activity in real-time
-- Create custom training datasets from recent observations
+While Surya primarily uses preprocessed SDO datasets, this tool provides a simple way to fetch current AIA and HMI observations for:
 
-## Why This Tool?
+- real-time solar activity monitoring
+- quick data exploration
+- recent-event validation workflows
+- prototype preprocessing and inference pipelines
 
-The Surya foundation model is trained on SDO data spanning 2011-2019. This tool bridges the gap by providing:
-- **Real-time observations** for current solar activity monitoring
-- **Quick data exploration** without downloading large preprocessed datasets
-- **Custom data collection** for fine-tuning on recent events
-- **Educational purposes** for understanding SDO instruments
+## What's New
 
-## 🚀 Quick Start
+The downloader now supports redundant live providers so it can continue working when a single upstream host is unavailable.
 
-### Installation
+### Provider fallback chain
+
+By default, the fetchers try providers in this order:
+
+1. `lmsal` — LMSAL Sun Today browse imagery
+2. `jsoc` — Stanford JSOC latest HMI imagery
+3. `nasa` — NASA SDO browse imagery
+4. `helioviewer` — Helioviewer rendered imagery
+
+This is available through both `sdo_fetcher_v2.py` and `sdo_data_fetcher.py` with `--provider auto`.
+
+## Quick Start
 
 ```bash
 cd tools/sdo_data_fetcher
 pip install -r requirements.txt
 ```
 
-### Basic Usage
+### Basic usage
 
 ```bash
-# Fetch latest AIA 171Å image (most common for Surya)
+# Latest AIA 171 image using automatic fallback
 python sdo_fetcher_v2.py --source AIA_171
 
-# Fetch multiple wavelengths used in Surya training
-python sdo_fetcher_v2.py --multiple
+# Force a specific provider
+python sdo_fetcher_v2.py --source AIA_171 --provider lmsal
 
-# List all available SDO sources
-python sdo_fetcher_v2.py --list
+# Download latest HMI magnetogram from JSOC
+python sdo_fetcher_v2.py --source HMI_Magnetogram --provider jsoc
+
+# Download multiple channels
+python sdo_fetcher_v2.py --multiple
 ```
 
-### Integration with Surya
+### Original fetcher
+
+```bash
+python sdo_data_fetcher.py --source AIA_193 --provider auto
+```
+
+## Available providers
+
+- `auto`
+- `lmsal`
+- `jsoc`
+- `nasa`
+- `helioviewer`
+
+## Available data sources
+
+### AIA channels
+
+- `AIA_94`
+- `AIA_131`
+- `AIA_171`
+- `AIA_193`
+- `AIA_211`
+- `AIA_304`
+- `AIA_335`
+- `AIA_1600`
+- `AIA_1700`
+
+### HMI channels
+
+- `HMI_Continuum`
+- `HMI_Magnetogram`
+
+## Python example
 
 ```python
 from sdo_fetcher_v2 import SDOFetcher
 
-# Fetch the 8 AIA channels used in Surya
-aia_channels = ["AIA_94", "AIA_131", "AIA_171", "AIA_193", 
-                "AIA_211", "AIA_304", "AIA_335", "AIA_1600"]
-
 fetcher = SDOFetcher(output_dir="surya_inference_data")
-results = fetcher.download_multiple(aia_channels)
+metadata = fetcher.get_latest_image_direct(source="AIA_171", provider="auto")
 
-# Images are now ready for preprocessing and Surya inference
+if metadata:
+    print(metadata["filepath"])
+    print(metadata["provider_name"])
+    print(metadata.get("observation_time"))
 ```
 
-## 📡 Available Data Sources
+## Advanced examples
 
-The tool provides access to all SDO/AIA and HMI channels:
+Run the menu-driven helper:
 
-### AIA Channels (used in Surya)
-- **AIA 94, 131, 171, 193, 211, 304, 335, 1600** - The 8 AIA channels Surya was trained on
-- **AIA 1700** - Additional AIA channel
-
-### HMI Channels (used in Surya)
-- **HMI Magnetogram** - Magnetic field measurements (5 channels in Surya model)
-- **HMI Continuum** - Visible light solar surface
-
-## 🔬 Use Cases with Surya
-
-### 1. Real-Time Solar Activity Monitoring
 ```bash
-# Monitor current solar activity with Surya's primary wavelengths
-python sdo_advanced_examples.py  # Select option 3: Space Weather Check
+python sdo_advanced_examples.py
 ```
 
-### 2. Custom Inference on Latest Data
-```python
-# Fetch latest multi-channel data
-fetcher = SDOFetcher(output_dir="latest_obs")
-fetcher.download_multiple(["AIA_171", "AIA_193", "AIA_211", "HMI_Magnetogram"])
+It includes:
 
-# Preprocess for Surya (user would add their preprocessing pipeline)
-# Run Surya inference on current solar conditions
-```
+- multi-wavelength comparison downloads
+- active region monitoring
+- prominence monitoring
+- space weather quick checks
+- continuous monitoring
 
-### 3. Fine-tuning Dataset Creation
-```bash
-# Continuous monitoring to build recent event datasets
-python sdo_advanced_examples.py  # Select option 5: Continuous monitoring
-```
+## Output
 
-### 4. Validation Data Collection
-- Fetch observations from specific dates for model validation
-- Compare Surya forecasts with actual observations
-- Track model performance on recent solar events
+Each download writes:
 
-## 📊 Output Format
+- an image file (`.jpg`, `.gif`, or `.png`, depending on provider)
+- a `.json` metadata file containing provider, source, URL, and timing info
 
-Each download produces:
-- **JPG image** (1024×1024) - Ready for quick visualization
-- **JSON metadata** - Observation timestamp and source info
+## Notes
 
-For Surya integration, images can be:
-1. Loaded and preprocessed to match Surya's input format (4096×4096, normalized)
-2. Aligned temporally for multi-channel input
-3. Used for inference or fine-tuning
+- LMSAL provides daily AIA and HMI browse imagery.
+- JSOC support is currently most useful for HMI live products.
+- Helioviewer remains as an API fallback when browse-image hosts are unavailable.
 
-## 🎯 Advanced Features
+## References
 
-The `sdo_advanced_examples.py` script includes:
-- Multi-wavelength comparison sets
-- Active region monitoring (useful for flare forecasting tasks)
-- Space weather assessment
-- Continuous monitoring for time-series data collection
-
-## 🔄 Data Pipeline Integration
-
-```
-Real-Time SDO          This Tool           Preprocessing       Surya Model
-Observations    →    sdo_fetcher_v2.py  →  (user's code)  →    Inference
-(12s cadence)        (download JPGs)       (resize, align)     (forecasting)
-```
-
-## 📖 Documentation
-
-- **Surya Model**: See main repository README for model architecture and capabilities
-- **SDO Mission**: [https://sdo.gsfc.nasa.gov/](https://sdo.gsfc.nasa.gov/)
-- **Data Specs**: Images at 1024×1024 (can be upsampled to Surya's 4096×4096)
-
-## 🤝 Contributing
-
-This tool is designed to be lightweight and focused on data acquisition. For preprocessing pipelines specific to Surya, please contribute to the main model repository.
-
-## ⚖️ License
-
-MIT License - Free for research and educational purposes.
-
-## 🌟 Acknowledgments
-
-- **NASA/SDO** for open solar data
-- **NASA-IMPACT Surya Team** for the foundation model
-- Data sourced from NASA's SDO mission servers
-
----
-
-**Note**: This tool fetches 1024×1024 images for quick access. For full-resolution 4096×4096 SDO data as used in Surya training, refer to the HuggingFace datasets in the main repository.
+- NASA SDO: https://sdo.gsfc.nasa.gov/
+- LMSAL Sun Today: https://suntoday.lmsal.com/suntoday/
+- JSOC latest HMI: https://jsoc1.stanford.edu/hmi_latest.html
+- Helioviewer: https://helioviewer.org/

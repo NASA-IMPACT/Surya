@@ -9,7 +9,7 @@ from pathlib import Path
 from sdo_fetcher_v2 import SDOFetcher
 
 
-def continuous_monitor(interval_seconds=300, sources=None):
+def continuous_monitor(interval_seconds=300, sources=None, provider="auto"):
     """
     Continuously monitor and download SDO images at specified intervals
     
@@ -25,6 +25,7 @@ def continuous_monitor(interval_seconds=300, sources=None):
     print(f"Starting continuous monitoring...")
     print(f"Sources: {', '.join(sources)}")
     print(f"Interval: {interval_seconds} seconds")
+    print(f"Provider mode: {provider}")
     print(f"Press Ctrl+C to stop\n")
     
     iteration = 0
@@ -39,9 +40,9 @@ def continuous_monitor(interval_seconds=300, sources=None):
             
             for source in sources:
                 try:
-                    result = fetcher.get_latest_image_direct(source)
+                    result = fetcher.get_latest_image_direct(source, provider=provider)
                     if result:
-                        print(f"✓ {source} downloaded successfully")
+                        print(f"✓ {source} downloaded successfully via {result.get('provider_name', result.get('provider', 'unknown'))}")
                     else:
                         print(f"✗ {source} failed")
                 except Exception as e:
@@ -75,7 +76,7 @@ def download_comparison_set():
     ]
     
     fetcher = SDOFetcher(output_dir="comparison_set")
-    results = fetcher.download_multiple(sources)
+    results = fetcher.download_multiple(sources, provider="auto")
     
     print("\n" + "="*60)
     print("Comparison Set Complete!")
@@ -109,7 +110,7 @@ def download_active_region_set():
     ]
     
     fetcher = SDOFetcher(output_dir="active_regions")
-    results = fetcher.download_multiple(sources)
+    results = fetcher.download_multiple(sources, provider="auto")
     
     print("\nActive region monitoring complete!")
     print("Check these images for:")
@@ -134,7 +135,7 @@ def quick_space_weather_check():
     sources = ["AIA_193", "HMI_Magnetogram"]
     
     print("Downloading key space weather indicators...")
-    results = fetcher.download_multiple(sources)
+    results = fetcher.download_multiple(sources, provider="auto")
     
     if len(results) == 2:
         print("\n" + "="*60)
@@ -168,7 +169,7 @@ def download_prominence_monitoring():
     ]
     
     fetcher = SDOFetcher(output_dir="prominences")
-    results = fetcher.download_multiple(sources)
+    results = fetcher.download_multiple(sources, provider="auto")
     
     print("\nProminence monitoring complete!")
     print("304Å is best for seeing prominences on the solar limb")
@@ -218,9 +219,9 @@ def main():
             
             for source in sources:
                 try:
-                    result = fetcher.get_latest_image_direct(source)
+                    result = fetcher.get_latest_image_direct(source, provider="auto")
                     if result:
-                        logging.info(f"✓ Downloaded {source}")
+                        logging.info(f"✓ Downloaded {source} via {result.get('provider_name', result.get('provider', 'unknown'))}")
                 except Exception as e:
                     logging.error(f"✗ Failed to download {source}: {e}")
             
@@ -277,7 +278,8 @@ def main():
             sources = ["AIA_171"]
         interval = input("Enter interval in seconds (default 300): ").strip()
         interval = int(interval) if interval else 300
-        continuous_monitor(interval, sources)
+        provider = input("Enter provider (auto/lmsal/jsoc/nasa/helioviewer, default auto): ").strip() or "auto"
+        continuous_monitor(interval, sources, provider)
     elif choice == "6":
         create_monitoring_script()
     elif choice == "7":
