@@ -102,4 +102,18 @@ iters_per_epoch_train: 2000
 iters_per_epoch_valid: 200
 iters_grad_accum: 1
 dtype: float32
-parallelism: "ddp" # Valid options: "ddp" and "fsdp" 
+parallelism: "ddp" # Valid options: "ddp" and "fsdp"
+
+# Runtime flags (override via Hydra CLI, e.g. `python finetune.py wandb=true`)
+gpu: true
+wandb: false
+profile: false
+
+# Disable Hydra's default behavior of changing the working directory and
+# creating per-run output dirs, so existing relative paths keep working.
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false

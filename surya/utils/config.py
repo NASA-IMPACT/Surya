@@ -1,7 +1,66 @@
 import os
 from argparse import Namespace
 
+import torch
 import yaml
+
+from omegaconf import OmegaConf, DictConfig
+
+
+OmegaConf.register_new_resolver("torch_dtype", lambda dtype_str: {
+    "float16": torch.float16,
+    "bfloat16": torch.bfloat16,
+    "float32": torch.float32,
+    "torch.float16": torch.float16,
+    "torch.bfloat16": torch.bfloat16,
+    "torch.float32": torch.float32,
+}.get(dtype_str, torch.float32))  # Default to float32 if unknown
+
+
+def resolve_dtype(dtype_str: str) -> torch.dtype:
+    mapping = {
+        "float16": torch.float16,
+        "bfloat16": torch.bfloat16,
+        "float32": torch.float32,
+    }
+    if dtype_str in mapping:
+        return mapping[dtype_str]
+    raise ValueError(f"Unsupported dtype: {dtype_str}")
+
+
+def process_config(cfg: DictConfig):
+    OmegaConf.set_struct(cfg, False)  # for struct behavior
+    cfg._set_flag("allow_objects", True)
+    
+    if 'scalers' not in cfg.data:
+        cfg.data.scalers = None
+    
+    if cfg.data.scalers_path:
+        with open(cfg.data.scalers_path, "r") as f:
+            scalers = yaml.safe_load(f)
+        cfg.data.scalers = scalers
+
+    suffix = cfg.get("job_id", "")
+    path_experiment = cfg.get("path_experiment", "")
+    path_experiment = path_experiment
+    
+    cfg.path_weights = os.path.join(path_experiment, suffix, "weights")
+    cfg.path_states = os.path.join(path_experiment, suffix, "states")
+
+    if path_experiment == "":
+        cfg.path_checkpoint = os.path.join(cfg.path_weights, "train", "checkpoint.pt")
+    else:
+        cfg.path_checkpoint = os.path.join(
+            os.path.dirname(path_experiment),
+            "weights",
+            "train",
+            "checkpoint.pt",)
+    
+    # cfg_dict = OmegaConf.to_container(cfg, resolve=True)
+    dtype_str = cfg.dtype
+    cfg.torch_dtype = resolve_dtype(dtype_str)
+    
+    return cfg
 
 
 class DataConfig:

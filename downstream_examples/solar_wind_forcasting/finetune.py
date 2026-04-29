@@ -1,4 +1,3 @@
-import argparse
 import sys
 import os
 
@@ -21,10 +20,13 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.data.distributed import DistributedSampler
 from torchvision import models
 from surya.utils import distributed
-import yaml
+import hydra
+import omegaconf
+from omegaconf import DictConfig
 
 from peft import LoraConfig, get_peft_model
 
+from surya.utils.config import process_config
 from surya.utils.data import build_scalers
 from surya.utils.distributed import (
     StatefulDistributedSampler,
@@ -175,7 +177,7 @@ def custom_collate_fn(batch):
     return collated_data, collated_metadata
 
 
-def evaluate_model(dataloader, epoch, model, device, run, config, criterion):
+def evaluate_model(config, dataloader, epoch, model, device, run, criterion):
     model.eval()
 
     # Initialize accumulators
@@ -211,7 +213,7 @@ def evaluate_model(dataloader, epoch, model, device, run, config, criterion):
             #         else:
             #             curr_batch['ds_time'] = torch.tensor(batch['ds_time'].timestamp(), dtype=torch.float32)
             #
-            with autocast(device_type="cuda", dtype=config["dtype"]):
+            with autocast(device_type="cuda", dtype=config["torch_dtype"]):
                 outputs = model(curr_batch)
                 target = curr_batch["target"]
                 loss = criterion(outputs, target)
@@ -309,7 +311,7 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
                 num_heads=config["model"]["num_heads"],
                 mlp_ratio=config["model"]["mlp_ratio"],
                 drop_rate=config["model"]["drop_rate"],
-                dtype=config["dtype"],
+                dtype=config["torch_dtype"],
                 window_size=config["model"]["window_size"],
                 dp_rank=config["model"]["dp_rank"],
                 learned_flow=config["model"]["learned_flow"],
@@ -419,6 +421,9 @@ def get_dataloaders(config, scalers):
     else:
         channels = config["data"]["channels"]
 
+    if isinstance(channels, omegaconf.listconfig.ListConfig):
+        channels = list(channels)
+
     train_dataset = WindSpeedDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
         sdo_data_root_path=config["data"]["sdo_data_root_path"],
@@ -493,7 +498,19 @@ def get_dataloaders(config, scalers):
     return train_loader, valid_loader
 
 
-def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
+@hydra.main(config_path=".", config_name="config", version_base="1.3")
+def main(config: DictConfig):
+    set_global_seed(0)
+
+    config = process_config(config)
+
+    use_gpu = config.get("gpu", True)
+    use_wandb = config.get("wandb", False)
+    profile = config.get("profile", False)
+    if not use_gpu:
+        raise ValueError(
+            "Training scripts are not configured for CPU use. Set `gpu=true` in the config."
+        )
 
     run = None
     local_rank, rank = init_ddp(use_gpu)
@@ -515,7 +532,6 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
             config=config,
             mode="offline",
         )
-        # wandb.save(args.config_path)
 
     torch.distributed.barrier()
 
@@ -585,7 +601,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
                 # Forward pass
                 optimizer.zero_grad()
-                with autocast(device_type="cuda", dtype=config["dtype"]):
+                with autocast(device_type="cuda", dtype=config["torch_dtype"]):
                     outputs = model(curr_batch)
                     target = curr_batch["target"].float()
                     loss = criterion(outputs, target)
@@ -627,41 +643,10 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         save_model_singular(model, fp, parallelism=config["parallelism"])
         print0(f"Epoch {epoch}: Model saved at {fp}")
 
-        evaluate_model(valid_loader, epoch, model, rank, run, config, criterion)
+        evaluate_model(config, valid_loader, epoch, model, rank, run, criterion)
+
+    torch.distributed.destroy_process_group()
 
 
 if __name__ == "__main__":
-
-    set_global_seed(0)
-
-    parser = argparse.ArgumentParser("Solar Wind Downstream baseline Training")
-    parser.add_argument(
-        "--config_path",
-        default="./config.yaml",
-        type=str,
-        help="Path to the configuration YAML file.",
-    )
-    parser.add_argument("--gpu", default=True, action="store_true", help="Run on GPU CUDA.")
-    parser.add_argument("--wandb", default=False, action="store_true", help="Log into WanDB.")
-    parser.add_argument("--profile", action="store_true")
-    args = parser.parse_args()
-
-    config = yaml.safe_load(open(args.config_path, "r"))
-    config["data"]["scalers"] = yaml.safe_load(open(config["data"]["scalers_path"], "r"))
-
-    if config["dtype"] == "float16":
-        config["dtype"] = torch.float16
-    elif config["dtype"] == "bfloat16":
-        config["dtype"] = torch.bfloat16
-    elif config["dtype"] == "float32":
-        config["dtype"] = torch.float32
-    else:
-        raise NotImplementedError("Please choose from [float16,bfloat16,float32]")
-
-    if not args.gpu:
-        raise ValueError(
-            "Training scripts are not configured for CPU use. Please set the `--gpu` flag."
-        )
-
-    main(config=config, use_gpu=args.gpu, use_wandb=args.wandb, profile=args.profile)
-    torch.distributed.destroy_process_group()
+    main()

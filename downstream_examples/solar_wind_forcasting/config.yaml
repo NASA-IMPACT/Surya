@@ -105,3 +105,17 @@ parallelism: "ddp" # Valid options: "ddp" and "fsdp"
 # Finetuning config fields
 pretrained_path: ./assets/surya.366m.v1.pt
 # freeze_backbone: False
+
+# Runtime flags (override via Hydra CLI, e.g. `python finetune.py wandb=true`)
+gpu: true
+wandb: false
+profile: false
+
+# Disable Hydra's default behavior of changing the working directory and
+# creating per-run output dirs, so existing relative paths keep working.
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false
