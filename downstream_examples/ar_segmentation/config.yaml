@@ -66,8 +66,8 @@ model:
     pos_weight: 1
 
 adapter:
-  use_channel_adapter: False
-  channels: ['aia94', 'aia131', 'aia171']
+  use_channel_adapter: false
+  channels: ['aia94',]
 
 optimizer:
   warm_up_steps: 0 #2000
