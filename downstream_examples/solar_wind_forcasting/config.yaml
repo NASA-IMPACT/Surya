@@ -68,6 +68,13 @@ model:
     lora_dropout: 0.1
     bias: 'none'
 
+adapter:
+  # Set use_channel_adapter to true to feed a k-channel subset to the model.
+  # When true, a learned 1x1x1 Conv3d projects k -> in_channels (13) before
+  # the backbone, and the dataset loads only the listed `channels`.
+  use_channel_adapter: false
+  channels: ['aia94',]
+
 metrics:
   # metrics for AR segmentation
   bce:

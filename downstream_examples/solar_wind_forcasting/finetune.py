@@ -41,6 +41,7 @@ from models import (
     ResNet50Classifier,
     AlexNetClassifier,
     MobileNetClassifier,
+    ChannelAdapter,
 )
 
 from surya.utils.log import log
@@ -413,6 +414,11 @@ def get_model(config, wandb_logger) -> torch.nn.Module:
 
 def get_dataloaders(config, scalers):
 
+    if config["adapter"]["use_channel_adapter"]:
+        channels = config["adapter"]["channels"]
+    else:
+        channels = config["data"]["channels"]
+
     train_dataset = WindSpeedDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
         sdo_data_root_path=config["data"]["sdo_data_root_path"],
@@ -421,7 +427,7 @@ def get_dataloaders(config, scalers):
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
         n_input_timestamps=config["model"]["time_embedding"]["time_dim"],
         rollout_steps=config["rollout_steps"],
-        channels=config["data"]["channels"],
+        channels=channels,
         drop_hmi_probability=config["drop_hmi_probability"],
         num_mask_aia_channels=config["num_mask_aia_channels"],
         use_latitude_in_learned_flow=config["use_latitude_in_learned_flow"],
@@ -446,7 +452,7 @@ def get_dataloaders(config, scalers):
         time_delta_target_minutes=config["data"]["time_delta_target_minutes"],
         n_input_timestamps=config["model"]["time_embedding"]["time_dim"],
         rollout_steps=config["rollout_steps"],
-        channels=config["data"]["channels"],
+        channels=channels,
         drop_hmi_probability=config["drop_hmi_probability"],
         num_mask_aia_channels=config["num_mask_aia_channels"],
         use_latitude_in_learned_flow=config["use_latitude_in_learned_flow"],
@@ -517,6 +523,15 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     model = get_model(config, run)
     if config["model"]["use_lora"] and config["model"]["model_type"] == "spectformer":
         model = apply_peft_lora(model, config)
+    if config["adapter"]["use_channel_adapter"] and config["model"]["model_type"] == "spectformer":
+        num_data_chans = len(config["adapter"]["channels"])
+        print0("Using Adapters for", config["model"]["in_channels"], "-->", num_data_chans, "channels")
+        model = ChannelAdapter(
+            model,
+            num_data_chans=num_data_chans,
+            time_dim=config["model"]["time_embedding"]["time_dim"],
+        )
+
     model.to(rank)
 
     if len(config["model"]["checkpoint_layers"]) > 0:
