@@ -3,9 +3,6 @@ SDO Data Fetcher v2 - Alternative Implementation
 Uses NASA's Helioviewer.org latest images API
 """
 
-import requests
-from datetime import datetime, timezone
-import json
 from pathlib import Path
 from typing import Optional, Dict
 import argparse
@@ -68,6 +65,48 @@ class SDOFetcher:
         print(f"{'='*60}\n")
         
         return results
+
+    def download_at_time(
+        self,
+        source: str = "AIA_171",
+        target_time: str = None,
+        timezone_mode: str = "utc",
+        width: int = 1024,
+        image_type: str = "png",
+    ) -> Optional[Dict]:
+        """Download the image closest to a requested date/time."""
+        if not target_time:
+            raise ValueError("target_time is required")
+        return self.provider_client.download_image_at(
+            source=source,
+            target_time=target_time,
+            timezone_mode=timezone_mode,
+            width=width,
+            image_type=image_type,
+        )
+
+    def download_time_series(
+        self,
+        sources: list = None,
+        start_time: str = None,
+        timezone_mode: str = "utc",
+        hours: float = 1.0,
+        cadence_minutes: int = 15,
+        width: int = 1024,
+        image_type: str = "png",
+    ):
+        """Download a forward-only historical sample window."""
+        if not start_time:
+            raise ValueError("start_time is required")
+        return self.provider_client.download_samples(
+            sources=sources,
+            start_time=start_time,
+            timezone_mode=timezone_mode,
+            hours=hours,
+            cadence_minutes=cadence_minutes,
+            width=width,
+            image_type=image_type,
+        )
     
     @staticmethod
     def list_sources():
@@ -96,6 +135,20 @@ def main():
                        help='List available sources')
     parser.add_argument('--provider', '-p', default='auto',
                        help='Data provider: auto, lmsal, jsoc, nasa, helioviewer')
+    parser.add_argument('--datetime', '--date', dest='target_datetime',
+                       help='Target date/time for historical fetch, e.g. 2026-02-06T12:30:00Z')
+    parser.add_argument('--timezone', choices=['utc', 'local'], default='utc',
+                       help='Interpret timezone-naive --datetime as UTC or local time (default: utc)')
+    parser.add_argument('--all', action='store_true',
+                       help='Download all available SDO wavelengths/sources')
+    parser.add_argument('--hours', type=float, default=1.0,
+                       help='Forward time window in hours for --datetime (default: 1)')
+    parser.add_argument('--cadence', type=int, default=15,
+                       help='Sample cadence in minutes for --datetime (default: 15)')
+    parser.add_argument('--width', type=int, default=1024,
+                       help='Historical image width in pixels (default: 1024)')
+    parser.add_argument('--image-type', choices=['png', 'jpg', 'webp'], default='png',
+                       help='Historical image type (default: png)')
     
     args = parser.parse_args()
     
@@ -105,6 +158,30 @@ def main():
         return
     
     fetcher = SDOFetcher(output_dir=args.output)
+
+    if args.target_datetime:
+        sources = list(SDO_SOURCES.keys()) if args.all else [args.source]
+        if args.hours > 0 and args.cadence > 0:
+            manifest = fetcher.download_time_series(
+                sources=sources,
+                start_time=args.target_datetime,
+                timezone_mode=args.timezone,
+                hours=args.hours,
+                cadence_minutes=args.cadence,
+                width=args.width,
+                image_type=args.image_type,
+            )
+            print(f"Manifest: {manifest['manifest_filepath']}")
+        else:
+            for source in sources:
+                fetcher.download_at_time(
+                    source=source,
+                    target_time=args.target_datetime,
+                    timezone_mode=args.timezone,
+                    width=args.width,
+                    image_type=args.image_type,
+                )
+        return
     
     if args.multiple:
         fetcher.download_multiple(provider=args.provider)

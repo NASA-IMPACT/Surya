@@ -5,14 +5,15 @@ Shared SDO data provider logic with automatic fallback.
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
-from typing import Dict, Iterable, Optional
+import time
+from typing import Callable, Dict, Iterable, List, Optional, Union
 
 import requests
 
 
 SDO_SOURCES = {
     "AIA_94": {
-        "sourceId": 13,
+        "sourceId": 8,
         "name": "AIA 94",
         "wavelength": "94Å",
         "description": "AIA 94 Å - Hot flare plasma",
@@ -20,7 +21,7 @@ SDO_SOURCES = {
         "lmsal_code": "0094",
     },
     "AIA_131": {
-        "sourceId": 14,
+        "sourceId": 9,
         "name": "AIA 131",
         "wavelength": "131Å",
         "description": "AIA 131 Å - Flaring regions",
@@ -28,7 +29,7 @@ SDO_SOURCES = {
         "lmsal_code": "0131",
     },
     "AIA_171": {
-        "sourceId": 15,
+        "sourceId": 10,
         "name": "AIA 171",
         "wavelength": "171Å",
         "description": "AIA 171 Å - Quiet corona and coronal loops",
@@ -36,7 +37,7 @@ SDO_SOURCES = {
         "lmsal_code": "0171",
     },
     "AIA_193": {
-        "sourceId": 16,
+        "sourceId": 11,
         "name": "AIA 193",
         "wavelength": "193Å",
         "description": "AIA 193 Å - Hot plasma in active regions",
@@ -44,7 +45,7 @@ SDO_SOURCES = {
         "lmsal_code": "0193",
     },
     "AIA_211": {
-        "sourceId": 17,
+        "sourceId": 12,
         "name": "AIA 211",
         "wavelength": "211Å",
         "description": "AIA 211 Å - Active regions",
@@ -52,7 +53,7 @@ SDO_SOURCES = {
         "lmsal_code": "0211",
     },
     "AIA_304": {
-        "sourceId": 18,
+        "sourceId": 13,
         "name": "AIA 304",
         "wavelength": "304Å",
         "description": "AIA 304 Å - Chromosphere and prominence",
@@ -60,7 +61,7 @@ SDO_SOURCES = {
         "lmsal_code": "0304",
     },
     "AIA_335": {
-        "sourceId": 19,
+        "sourceId": 14,
         "name": "AIA 335",
         "wavelength": "335Å",
         "description": "AIA 335 Å - Active regions",
@@ -68,7 +69,7 @@ SDO_SOURCES = {
         "lmsal_code": "0335",
     },
     "AIA_1600": {
-        "sourceId": 20,
+        "sourceId": 15,
         "name": "AIA 1600",
         "wavelength": "1600Å",
         "description": "AIA 1600 Å - Upper photosphere",
@@ -76,15 +77,23 @@ SDO_SOURCES = {
         "lmsal_code": "1600",
     },
     "AIA_1700": {
-        "sourceId": 21,
+        "sourceId": 16,
         "name": "AIA 1700",
         "wavelength": "1700Å",
         "description": "AIA 1700 Å - Temperature minimum",
         "nasa_code": "1700",
         "lmsal_code": "1700",
     },
+    "AIA_4500": {
+        "sourceId": 17,
+        "name": "AIA 4500",
+        "wavelength": "4500Å",
+        "description": "AIA 4500 Å - Visible light photosphere",
+        "nasa_code": "4500",
+        "lmsal_code": "4500",
+    },
     "HMI_Continuum": {
-        "sourceId": 22,
+        "sourceId": 18,
         "name": "HMI Continuum",
         "wavelength": "Continuum",
         "description": "HMI Continuum - Solar surface",
@@ -94,7 +103,7 @@ SDO_SOURCES = {
         "jsoc_timestamp_key": "continuum",
     },
     "HMI_Magnetogram": {
-        "sourceId": 23,
+        "sourceId": 19,
         "name": "HMI Magnetogram",
         "wavelength": "Magnetogram",
         "description": "HMI Magnetogram - Magnetic field",
@@ -117,13 +126,280 @@ PROVIDER_LABELS = {
 AUTO_PROVIDER_ORDER = ("lmsal", "jsoc", "nasa", "helioviewer")
 
 
+def parse_target_datetime(value: Union[str, datetime], timezone_mode: str = "utc") -> datetime:
+    """Parse a target time and return an aware UTC datetime."""
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = value.strip()
+        if not text:
+            raise ValueError("Target datetime cannot be empty")
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        if "T" not in text and " " in text:
+            text = text.replace(" ", "T", 1)
+        parsed = datetime.fromisoformat(text)
+
+    if parsed.tzinfo is None:
+        if timezone_mode.lower() == "local":
+            return parsed.astimezone(timezone.utc)
+        else:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+
+    return parsed.astimezone(timezone.utc)
+
+
+def format_utc_datetime(value: datetime) -> str:
+    """Format a datetime for Helioviewer APIs."""
+    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def utc_slug(value: datetime) -> str:
+    """Create a filesystem-safe UTC timestamp."""
+    return value.astimezone(timezone.utc).strftime("%Y%m%d_%H%M%SZ")
+
+
+def _parse_helioviewer_datetime(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    text = value.strip().replace(" ", "T", 1)
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(text)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
 class SDOProviderClient:
     """Download latest SDO imagery from multiple redundant providers."""
 
     def __init__(self, output_dir: str = "sdo_data"):
         self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         self.session = requests.Session()
+
+    def download_image_at(
+        self,
+        source: str,
+        target_time: Union[str, datetime],
+        timezone_mode: str = "utc",
+        width: int = 1024,
+        image_type: str = "png",
+        output_subdir: Optional[str] = None,
+    ) -> Optional[Dict]:
+        """Download the image closest to a requested UTC or local target time."""
+        if source not in SDO_SOURCES:
+            raise ValueError(f"Invalid source. Choose from: {list(SDO_SOURCES.keys())}")
+
+        image_type = image_type.lower().lstrip(".")
+        if image_type not in {"png", "jpg", "webp"}:
+            raise ValueError("image_type must be one of: png, jpg, webp")
+        if width <= 0:
+            raise ValueError("width must be greater than zero")
+
+        target_dt = parse_target_datetime(target_time, timezone_mode=timezone_mode)
+        source_info = SDO_SOURCES[source]
+
+        print(f"\nFetching {source} closest to {format_utc_datetime(target_dt)}...")
+        print(f"Wavelength: {source_info['wavelength']}")
+        print("Provider: Helioviewer API")
+
+        info_response = self._request_with_retries(
+            "https://api.helioviewer.org/v2/getClosestImage/",
+            params={
+                "date": format_utc_datetime(target_dt),
+                "sourceId": source_info["sourceId"],
+            },
+            timeout=45,
+        )
+        info_response.raise_for_status()
+        image_info = info_response.json()
+        image_id = image_info.get("id")
+
+        if not image_id:
+            return None
+
+        response = self._request_with_retries(
+            "https://api.helioviewer.org/v2/downloadImage/",
+            params={
+                "id": image_id,
+                "width": width,
+                "type": image_type,
+            },
+            timeout=90,
+            stream=True,
+        )
+        response.raise_for_status()
+
+        target_dir = self.output_dir / output_subdir if output_subdir else self.output_dir
+        target_dir.mkdir(parents=True, exist_ok=True)
+        filepath = target_dir / f"SDO_{source}_{utc_slug(target_dt)}.{image_type}"
+
+        with open(filepath, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        actual_dt = _parse_helioviewer_datetime(image_info.get("date"))
+        signed_delta = None
+        abs_delta = None
+        if actual_dt:
+            signed_delta = (actual_dt - target_dt).total_seconds()
+            abs_delta = abs(signed_delta)
+
+        metadata = {
+            "source": source,
+            "name": source_info["name"],
+            "wavelength": source_info["wavelength"],
+            "description": source_info["description"],
+            "provider": "helioviewer",
+            "provider_name": PROVIDER_LABELS["helioviewer"],
+            "filepath": str(filepath),
+            "download_time": datetime.now(timezone.utc).isoformat(),
+            "image_url": response.url,
+            "content_type": response.headers.get("Content-Type"),
+            "requested_time": format_utc_datetime(target_dt),
+            "observation_time": format_utc_datetime(actual_dt) if actual_dt else image_info.get("date"),
+            "actual_observation_time": format_utc_datetime(actual_dt) if actual_dt else image_info.get("date"),
+            "delta_seconds": signed_delta,
+            "abs_delta_seconds": abs_delta,
+            "image_id": image_id,
+            "image_width": width,
+            "image_type": image_type,
+            "helioviewer_metadata": image_info,
+        }
+
+        metadata_file = filepath.with_suffix(".json")
+        metadata["metadata_filepath"] = str(metadata_file)
+        with open(metadata_file, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+
+        print(f"✓ Image saved: {filepath}")
+        print(f"✓ Metadata saved: {metadata_file}")
+        if metadata["actual_observation_time"]:
+            print(f"✓ Observation time: {metadata['actual_observation_time']}")
+
+        return metadata
+
+    def download_samples(
+        self,
+        sources: Optional[List[str]],
+        start_time: Union[str, datetime],
+        timezone_mode: str = "utc",
+        hours: float = 1.0,
+        cadence_minutes: int = 15,
+        width: int = 1024,
+        image_type: str = "png",
+        output_subdir: Optional[str] = None,
+        progress_callback: Optional[Callable[[Dict], None]] = None,
+    ) -> Dict:
+        """Download a forward-only time series for the selected SDO sources."""
+        if sources is None:
+            sources = list(SDO_SOURCES.keys())
+        invalid_sources = [source for source in sources if source not in SDO_SOURCES]
+        if invalid_sources:
+            raise ValueError(f"Invalid sources: {invalid_sources}")
+        if hours <= 0:
+            raise ValueError("hours must be greater than zero")
+        if cadence_minutes <= 0:
+            raise ValueError("cadence_minutes must be greater than zero")
+
+        start_dt = parse_target_datetime(start_time, timezone_mode=timezone_mode)
+        end_dt = start_dt + timedelta(hours=hours)
+        sample_times = []
+        current_dt = start_dt
+        while current_dt <= end_dt:
+            sample_times.append(current_dt)
+            current_dt += timedelta(minutes=cadence_minutes)
+
+        run_subdir = output_subdir or f"historical_{utc_slug(start_dt)}"
+        run_dir = self.output_dir / run_subdir
+        run_dir.mkdir(parents=True, exist_ok=True)
+
+        total = len(sample_times) * len(sources)
+        completed = 0
+        results = []
+        errors = []
+
+        for sample_time in sample_times:
+            sample_subdir = f"{run_subdir}/{utc_slug(sample_time)}"
+            for source in sources:
+                try:
+                    result = self.download_image_at(
+                        source=source,
+                        target_time=sample_time,
+                        timezone_mode="utc",
+                        width=width,
+                        image_type=image_type,
+                        output_subdir=sample_subdir,
+                    )
+                    if result:
+                        results.append(result)
+                        event = {"type": "result", "completed": completed + 1, "total": total, "result": result}
+                    else:
+                        error = {
+                            "source": source,
+                            "requested_time": format_utc_datetime(sample_time),
+                            "error": "No image found",
+                        }
+                        errors.append(error)
+                        event = {"type": "error", "completed": completed + 1, "total": total, "error": error}
+                except Exception as exc:
+                    error = {
+                        "source": source,
+                        "requested_time": format_utc_datetime(sample_time),
+                        "error": str(exc),
+                    }
+                    errors.append(error)
+                    event = {"type": "error", "completed": completed + 1, "total": total, "error": error}
+
+                completed += 1
+                if progress_callback:
+                    progress_callback(event)
+
+        manifest = {
+            "provider": "helioviewer",
+            "provider_name": PROVIDER_LABELS["helioviewer"],
+            "start_time": format_utc_datetime(start_dt),
+            "end_time": format_utc_datetime(end_dt),
+            "timezone_mode": timezone_mode,
+            "hours": hours,
+            "cadence_minutes": cadence_minutes,
+            "sample_times": [format_utc_datetime(sample_time) for sample_time in sample_times],
+            "sources": sources,
+            "total_requested": total,
+            "successful_downloads": len(results),
+            "failed_downloads": len(errors),
+            "output_dir": str(run_dir),
+            "results": results,
+            "errors": errors,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        manifest_file = run_dir / "manifest.json"
+        manifest["manifest_filepath"] = str(manifest_file)
+        with open(manifest_file, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+
+        print(f"\n✓ Historical fetch complete: {len(results)}/{total} images")
+        print(f"✓ Manifest saved: {manifest_file}")
+        return manifest
+
+    def _request_with_retries(self, url: str, retries: int = 2, **kwargs) -> requests.Response:
+        last_error = None
+        for attempt in range(retries + 1):
+            try:
+                response = self.session.get(url, **kwargs)
+                response.raise_for_status()
+                return response
+            except requests.exceptions.RequestException as exc:
+                last_error = exc
+                if attempt >= retries:
+                    raise
+                wait_seconds = 1 + attempt
+                print(f"Helioviewer request failed, retrying in {wait_seconds}s: {exc}")
+                time.sleep(wait_seconds)
+        raise last_error
 
     def download_latest_image(self, source: str = "AIA_171", provider: str = "auto") -> Optional[Dict]:
         """Download the latest image using the requested provider or fallback chain."""
