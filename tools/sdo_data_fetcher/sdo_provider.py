@@ -124,6 +124,7 @@ PROVIDER_LABELS = {
 
 
 AUTO_PROVIDER_ORDER = ("lmsal", "jsoc", "nasa", "helioviewer")
+AUTO_PROVIDER_ORDER_HIGHRES = ("helioviewer", "lmsal", "jsoc", "nasa")
 
 
 def parse_target_datetime(value: Union[str, datetime], timezone_mode: str = "utc") -> datetime:
@@ -179,6 +180,15 @@ class SDOProviderClient:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.session = requests.Session()
 
+    @staticmethod
+    def _normalize_render_params(width: int, image_type: str) -> tuple[int, str]:
+        image_type = image_type.lower().lstrip(".")
+        if image_type not in {"png", "jpg", "webp"}:
+            raise ValueError("image_type must be one of: png, jpg, webp")
+        if width <= 0:
+            raise ValueError("width must be greater than zero")
+        return width, image_type
+
     def download_image_at(
         self,
         source: str,
@@ -192,11 +202,7 @@ class SDOProviderClient:
         if source not in SDO_SOURCES:
             raise ValueError(f"Invalid source. Choose from: {list(SDO_SOURCES.keys())}")
 
-        image_type = image_type.lower().lstrip(".")
-        if image_type not in {"png", "jpg", "webp"}:
-            raise ValueError("image_type must be one of: png, jpg, webp")
-        if width <= 0:
-            raise ValueError("width must be greater than zero")
+        width, image_type = self._normalize_render_params(width, image_type)
 
         target_dt = parse_target_datetime(target_time, timezone_mode=timezone_mode)
         source_info = SDO_SOURCES[source]
@@ -401,11 +407,18 @@ class SDOProviderClient:
                 time.sleep(wait_seconds)
         raise last_error
 
-    def download_latest_image(self, source: str = "AIA_171", provider: str = "auto") -> Optional[Dict]:
+    def download_latest_image(
+        self,
+        source: str = "AIA_171",
+        provider: str = "auto",
+        width: int = 1024,
+        image_type: str = "png",
+    ) -> Optional[Dict]:
         """Download the latest image using the requested provider or fallback chain."""
         if source not in SDO_SOURCES:
             raise ValueError(f"Invalid source. Choose from: {list(SDO_SOURCES.keys())}")
 
+        width, image_type = self._normalize_render_params(width, image_type)
         provider_order = self._resolve_provider_order(provider)
 
         print(f"\nFetching latest {source} image...")
@@ -417,7 +430,7 @@ class SDOProviderClient:
         for provider_name in provider_order:
             try:
                 print(f"Trying provider: {PROVIDER_LABELS[provider_name]}")
-                result = getattr(self, f"_download_from_{provider_name}")(source)
+                result = getattr(self, f"_download_from_{provider_name}")(source, width=width, image_type=image_type)
                 if result:
                     return result
             except requests.exceptions.RequestException as e:
@@ -453,6 +466,7 @@ class SDOProviderClient:
         print("\nAvailable data providers:")
         print("=" * 60)
         print("auto         - Automatic fallback chain")
+        print("auto_highres - High-resolution fallback chain")
         for key, label in PROVIDER_LABELS.items():
             print(f"{key:12} - {label}")
 
@@ -460,11 +474,13 @@ class SDOProviderClient:
         provider = provider.lower()
         if provider == "auto":
             return AUTO_PROVIDER_ORDER
+        if provider == "auto_highres":
+            return AUTO_PROVIDER_ORDER_HIGHRES
         if provider not in PROVIDER_LABELS:
-            raise ValueError(f"Invalid provider. Choose from: auto, {', '.join(PROVIDER_LABELS.keys())}")
+            raise ValueError(f"Invalid provider. Choose from: auto, auto_highres, {', '.join(PROVIDER_LABELS.keys())}")
         return (provider,)
 
-    def _download_from_lmsal(self, source: str) -> Optional[Dict]:
+    def _download_from_lmsal(self, source: str, width: int = 1024, image_type: str = "png") -> Optional[Dict]:
         code = SDO_SOURCES[source].get("lmsal_code")
         if not code:
             return None
@@ -492,14 +508,20 @@ class SDOProviderClient:
                         image_url=url,
                         extension=".jpg",
                         observation_time=response.headers.get("Last-Modified") or candidate_date.strftime("%Y-%m-%d"),
-                        extra_metadata={"date_path": date_path},
+                        extra_metadata={
+                            "date_path": date_path,
+                            "requested_image_width": width,
+                            "requested_image_type": image_type,
+                            "render_settings_applied": False,
+                            "resolution_class": "browse_fixed",
+                        },
                     )
                 except requests.exceptions.RequestException:
                     continue
 
         return None
 
-    def _download_from_jsoc(self, source: str) -> Optional[Dict]:
+    def _download_from_jsoc(self, source: str, width: int = 1024, image_type: str = "png") -> Optional[Dict]:
         jsoc_path = SDO_SOURCES[source].get("jsoc_path")
         if not jsoc_path:
             return None
@@ -515,9 +537,15 @@ class SDOProviderClient:
             image_url=url,
             extension=Path(jsoc_path).suffix or ".img",
             observation_time=self._timestamp_from_jsoc(source),
+            extra_metadata={
+                "requested_image_width": width,
+                "requested_image_type": image_type,
+                "render_settings_applied": False,
+                "resolution_class": "browse_fixed",
+            },
         )
 
-    def _download_from_nasa(self, source: str) -> Optional[Dict]:
+    def _download_from_nasa(self, source: str, width: int = 1024, image_type: str = "png") -> Optional[Dict]:
         nasa_code = SDO_SOURCES[source].get("nasa_code")
         if not nasa_code:
             return None
@@ -539,21 +567,29 @@ class SDOProviderClient:
                     image_url=url,
                     extension=".jpg",
                     observation_time=response.headers.get("Last-Modified"),
+                    extra_metadata={
+                        "requested_image_width": width,
+                        "requested_image_type": image_type,
+                        "render_settings_applied": False,
+                        "resolution_class": "browse_fixed",
+                    },
                 )
             except requests.exceptions.RequestException:
                 continue
 
         return None
 
-    def _download_from_helioviewer(self, source: str) -> Optional[Dict]:
+    def _download_from_helioviewer(self, source: str, width: int = 1024, image_type: str = "png") -> Optional[Dict]:
+        width, image_type = self._normalize_render_params(width, image_type)
         source_id = SDO_SOURCES[source]["sourceId"]
-        info_url = "https://api.helioviewer.org/v2/getClosestImage/"
-        info_params = {
-            "date": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "sourceId": source_id,
-        }
-
-        info_response = self.session.get(info_url, params=info_params, timeout=30)
+        info_response = self._request_with_retries(
+            "https://api.helioviewer.org/v2/getClosestImage/",
+            params={
+                "date": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "sourceId": source_id,
+            },
+            timeout=30,
+        )
         info_response.raise_for_status()
         image_info = info_response.json()
         image_id = image_info.get("id")
@@ -561,15 +597,16 @@ class SDOProviderClient:
         if not image_id:
             return None
 
-        tile_url = "https://api.helioviewer.org/v2/getTile/"
-        tile_params = {
-            "id": image_id,
-            "x": 0,
-            "y": 0,
-            "imageScale": 2.4,
-            "display": "true",
-        }
-        response = self.session.get(tile_url, params=tile_params, timeout=30, stream=True)
+        response = self._request_with_retries(
+            "https://api.helioviewer.org/v2/downloadImage/",
+            params={
+                "id": image_id,
+                "width": width,
+                "type": image_type,
+            },
+            timeout=90,
+            stream=True,
+        )
         response.raise_for_status()
 
         return self._save_response(
@@ -577,9 +614,17 @@ class SDOProviderClient:
             source=source,
             provider="helioviewer",
             image_url=response.url,
-            extension=".png",
+            extension=f".{image_type}",
             observation_time=image_info.get("date"),
-            extra_metadata={"image_id": image_id},
+            extra_metadata={
+                "image_id": image_id,
+                "image_width": width,
+                "image_type": image_type,
+                "requested_image_width": width,
+                "requested_image_type": image_type,
+                "render_settings_applied": True,
+                "resolution_class": "rendered",
+            },
         )
 
     def _timestamp_from_lmsal(self, source: str) -> Optional[str]:

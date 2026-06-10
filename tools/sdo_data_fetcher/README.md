@@ -1,113 +1,130 @@
 # 🌞 SDO Data Fetcher
 
-A lightweight Python tool for fetching live and historical Solar Dynamics Observatory (SDO) browse imagery for Surya-related experimentation and monitoring.
+[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![NASA SDO](https://img.shields.io/badge/NASA-SDO-red.svg)](https://sdo.gsfc.nasa.gov/)
 
-## Overview
+A powerful Python application to fetch real-time and historical solar images from NASA's **Solar Dynamics Observatory (SDO)**. Get solar data in seconds with support for all AIA wavelengths and HMI instruments!
 
-While Surya primarily uses preprocessed SDO datasets, this tool provides a simple way to fetch current and recent-past AIA/HMI observations for:
+<p align="center">
+  <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg" width="300" alt="SDO AIA 171">
+  <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0304.jpg" width="300" alt="SDO AIA 304">
+</p>
 
-- real-time solar activity monitoring
-- flare and active-region review windows
-- quick data exploration
-- recent-event validation workflows
-- prototype preprocessing and inference pipelines
+## ✨ Features
 
-## What's New
+- 🔴 **Live Data** - Fetches the latest SDO observations with automatic provider fallback
+- 🌈 **12 Sources** - All available SDO AIA channels plus HMI continuum and magnetogram
+- 🕒 **Historical Target Times** - Fetch SDO imagery closest to a specific date/time through Helioviewer
+- 🕹️ **Retro Web UI** - Dependency-free local Intel-blue console for reviewing flare windows
+- 📊 **Auto Metadata** - Each image includes JSON metadata with observation details
+- ⚡ **Redundant Sources** - Automatically falls back across LMSAL Sun Today, Stanford JSOC, NASA SDO, and Helioviewer
+- 🎯 **CLI & Python API** - Use from command line or integrate into your code
+- 📦 **Batch Downloads** - Get multiple wavelengths simultaneously
+- 🔬 **Space Weather Ready** - Perfect for monitoring solar activity
 
-The downloader now supports redundant live providers plus Helioviewer-backed historical target-time downloads. You can fetch all available SDO wavelengths from a target date/time forward for several hours and review the results in a dependency-free local web UI.
+## 🚀 Quick Start
 
-### Provider fallback chain
-
-By default, the fetchers try providers in this order:
-
-1. `lmsal` — LMSAL Sun Today browse imagery
-2. `jsoc` — Stanford JSOC latest HMI imagery
-3. `nasa` — NASA SDO browse imagery
-4. `helioviewer` — Helioviewer rendered imagery
-
-This is available through both `sdo_fetcher_v2.py` and `sdo_data_fetcher.py` with `--provider auto`.
-
-## Quick Start
+### Installation
 
 ```bash
-cd tools/sdo_data_fetcher
+# Clone the repository
+git clone https://github.com/ep150de/sdo-data-fetcher.git
+cd sdo-data-fetcher
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Basic usage
+### Basic Usage
 
 ```bash
-# Latest AIA 171 image using automatic fallback
-python sdo_fetcher_v2.py --source AIA_171
+# Get the latest AIA 171Å image (default)
+python sdo_fetcher_v2.py
+
+# Prefer high-resolution rendered output first, then fallback
+python sdo_fetcher_v2.py --source AIA_171 --provider auto_highres --width 4096 --image-type png
 
 # Force a specific provider
 python sdo_fetcher_v2.py --source AIA_171 --provider lmsal
 
-# Download latest HMI magnetogram from JSOC
-python sdo_fetcher_v2.py --source HMI_Magnetogram --provider jsoc
+# Get a specific wavelength
+python sdo_fetcher_v2.py --source AIA_304
 
-# Download multiple channels
+# Download multiple wavelengths
 python sdo_fetcher_v2.py --multiple
 
-# Download all available SDO sources from a UTC target time forward for 4 hours
+# Download all wavelengths from a target UTC time forward for 4 hours
 python sdo_fetcher_v2.py --datetime "2026-02-06T12:30:00Z" --all --hours 4 --cadence 15
 
-# Interpret a timezone-naive datetime as local time before converting to UTC
-python sdo_fetcher_v2.py --datetime "2026-02-06T07:30:00" --timezone local --all --hours 3 --cadence 15
-
-# Launch the retro local web UI
+# Launch the local retro web UI
 python sdo_web_ui.py
+
+# List all available sources
+python sdo_fetcher_v2.py --list
 ```
 
-Open `http://127.0.0.1:8765` after launching the web UI.
+Then open `http://127.0.0.1:8765` to use the web console.
 
-### Original fetcher
+## 📡 Available Data Sources
+
+| Source | Wavelength | Temperature | Best For |
+|--------|------------|-------------|----------|
+| **AIA_94** | 94 Å | ~6 MK | Hot flare plasma |
+| **AIA_131** | 131 Å | ~10 MK | Flaring regions |
+| **AIA_171** | 171 Å | ~0.6 MK | Quiet corona, coronal loops ⭐ |
+| **AIA_193** | 193 Å | ~1.5 MK | Active regions |
+| **AIA_211** | 211 Å | ~2 MK | Active regions |
+| **AIA_304** | 304 Å | ~0.05 MK | Prominences, filaments |
+| **AIA_335** | 335 Å | ~2.5 MK | Active regions |
+| **AIA_1600** | 1600 Å | - | Upper photosphere |
+| **AIA_1700** | 1700 Å | - | Temperature minimum |
+| **AIA_4500** | 4500 Å | - | Visible light photosphere |
+| **HMI_Continuum** | Visible | - | Solar surface |
+| **HMI_Magnetogram** | - | - | Magnetic fields |
+
+## 💡 Usage Examples
+
+### Command Line
 
 ```bash
-python sdo_data_fetcher.py --source AIA_193 --provider auto
+# Monitor solar activity
+python sdo_fetcher_v2.py --source AIA_193
+
+# Review a flare or active region from a specific UTC time
+python sdo_fetcher_v2.py --datetime "2026-02-06T12:30:00Z" --source AIA_131 --hours 2 --cadence 10
+
+# Interpret a timezone-naive time as your local timezone, then convert to UTC
+python sdo_fetcher_v2.py --datetime "2026-02-06T07:30:00" --timezone local --all --hours 3 --cadence 15
+
+# Space weather check
+python sdo_advanced_examples.py  # Choose option 3
+
+# Download full comparison set
+python sdo_advanced_examples.py  # Choose option 1
 ```
 
-## Available providers
-
-- `auto`
-- `lmsal`
-- `jsoc`
-- `nasa`
-- `helioviewer`
-
-## Available data sources
-
-### AIA channels
-
-- `AIA_94`
-- `AIA_131`
-- `AIA_171`
-- `AIA_193`
-- `AIA_211`
-- `AIA_304`
-- `AIA_335`
-- `AIA_1600`
-- `AIA_1700`
-- `AIA_4500`
-
-### HMI channels
-
-- `HMI_Continuum`
-- `HMI_Magnetogram`
-
-## Python example
+### Python Code
 
 ```python
 from sdo_fetcher_v2 import SDOFetcher
 
-fetcher = SDOFetcher(output_dir="surya_inference_data")
-metadata = fetcher.get_latest_image_direct(source="AIA_171", provider="auto")
+# Initialize fetcher
+fetcher = SDOFetcher(output_dir="solar_images")
+
+# Download latest image
+metadata = fetcher.get_latest_image_direct(source="AIA_171")
 
 if metadata:
-    print(metadata["filepath"])
-    print(metadata["provider_name"])
-    print(metadata.get("observation_time"))
+    print(f"Image saved: {metadata['filepath']}")
+  print(f"Provider: {metadata['provider_name']}")
+  print(f"Observation time: {metadata['observation_time']}")
 
+# Download multiple wavelengths
+sources = ["AIA_171", "AIA_193", "AIA_304", "HMI_Magnetogram"]
+results = fetcher.download_multiple(sources)
+
+# Download all wavelengths forward from a target time
 manifest = fetcher.download_time_series(
     sources=list(fetcher.SDO_SOURCES.keys()),
     start_time="2026-02-06T12:30:00Z",
@@ -117,7 +134,7 @@ manifest = fetcher.download_time_series(
 )
 ```
 
-## Historical solar moment UI
+## 🕹️ Historical Solar Moment Web UI
 
 Run the dependency-free local web app:
 
@@ -125,50 +142,123 @@ Run the dependency-free local web app:
 python sdo_web_ui.py
 ```
 
-The Intel-blue retro console lets you choose:
+Open `http://127.0.0.1:8765` and enter:
 
-- target date and time
-- `UTC` or `Local timezone`
-- forward-only duration in hours
-- sampling cadence in minutes
-- all wavelengths or selected wavelengths
-- image width and format
+- Target date and time
+- Timezone mode: `UTC` or `Local timezone`
+- Forward-only duration in hours
+- Sampling cadence in minutes
+- Image width and format
+- All wavelengths or selected wavelengths
 
-Historical results are grouped by requested timestamp with links to each rendered image and JSON metadata. Historical fetching uses Helioviewer because the other providers in this tool are latest/browse feeds.
+The UI downloads the closest available Helioviewer-rendered image for each selected SDO source at each sample time. Results are grouped by requested timestamp with links to each image and its JSON metadata.
 
-## Advanced examples
+Historical fetching uses Helioviewer because the other providers in this repository are latest/browse feeds rather than arbitrary-time APIs.
 
-Run the menu-driven helper:
+## 🔁 Redundant Live Data Providers
+
+The fetchers now support a provider chain for current imagery:
+
+- **LMSAL Sun Today** - Daily AIA and HMI browse images at `suntoday.lmsal.com`
+- **Stanford JSOC** - Latest HMI browse products at `jsoc1.stanford.edu`
+- **NASA SDO** - Latest public browse images at `sdo.gsfc.nasa.gov`
+- **Helioviewer** - API-based rendered imagery fallback (and high-resolution first mode)
+
+Use `--provider auto` for browse-first fallback, `--provider auto_highres` for high-resolution-first fallback, or pick one explicitly with `--provider lmsal`, `--provider jsoc`, `--provider nasa`, or `--provider helioviewer`.
+
+For Helioviewer downloads (latest and historical), you can also request render settings with `--width` and `--image-type`.
+If fallback lands on browse providers (LMSAL/JSOC/NASA), those settings are not applied and metadata marks `render_settings_applied: false` with `resolution_class: browse_fixed`.
+
+## 🎓 Advanced Features
+
+The `sdo_advanced_examples.py` script includes:
+
+1. **Multi-wavelength comparison sets** - Download complementary wavelengths for analysis
+2. **Active region monitoring** - Track solar flares and active regions
+3. **Space weather quick check** - Rapid assessment tool
+4. **Prominence monitoring** - Track eruptions and filaments
+5. **Continuous monitoring** - Automated periodic downloads
+6. **Monitoring daemon generator** - Create long-running monitoring scripts
 
 ```bash
 python sdo_advanced_examples.py
 ```
 
-It includes:
+## 📂 Output Structure
 
-- multi-wavelength comparison downloads
-- active region monitoring
-- prominence monitoring
-- space weather quick checks
-- continuous monitoring
+```
+sdo_data/
+├── SDO_AIA_171_20260206_123456.jpg    # Solar image
+├── SDO_AIA_171_20260206_123456.json   # Metadata
+├── SDO_AIA_304_20260206_123457.jpg
+├── SDO_AIA_304_20260206_123457.json
+└── historical_20260206_123000Z/
+    ├── manifest.json
+    └── 20260206_123000Z/
+        ├── SDO_AIA_171_20260206_123000Z.png
+        └── SDO_AIA_171_20260206_123000Z.json
+```
 
-## Output
+Each JSON file contains:
+- Source and wavelength information
+- Exact observation timestamp
+- Requested historical timestamp and closest actual observation timestamp
+- Time delta between requested and actual observation
+- Download metadata
+- Direct image URL
+- Render provenance fields (`requested_image_width`, `requested_image_type`, `render_settings_applied`, `resolution_class`)
 
-Each download writes:
+## 🔬 About NASA's SDO
 
-- an image file (`.jpg`, `.gif`, or `.png`, depending on provider)
-- a `.json` metadata file containing provider, source, URL, and timing info
-- for historical windows, a `manifest.json` summarizing requested samples, successful downloads, and failures
+The **Solar Dynamics Observatory** is a NASA mission launched in February 2010 to study the Sun's atmosphere and magnetic activity. It provides:
 
-## Notes
+- 🛰️ **24/7 observations** from geosynchronous orbit
+- 📸 **4K images every 12 seconds** in 10 wavelengths
+- 🧲 **Magnetic field measurements** of the Sun's surface
+- ☀️ **Real-time space weather monitoring**
+- 📊 **Over 20 million images captured** since launch
 
-- LMSAL provides daily AIA and HMI browse imagery.
-- JSOC support is currently most useful for HMI live products.
-- Helioviewer remains as an API fallback when browse-image hosts are unavailable.
+Learn more at [sdo.gsfc.nasa.gov](https://sdo.gsfc.nasa.gov/)
 
-## References
+## 📖 Documentation
 
-- NASA SDO: https://sdo.gsfc.nasa.gov/
-- LMSAL Sun Today: https://suntoday.lmsal.com/suntoday/
-- JSOC latest HMI: https://jsoc1.stanford.edu/hmi_latest.html
-- Helioviewer: https://helioviewer.org/
+- **[SDO_GUIDE.md](SDO_GUIDE.md)** - Comprehensive guide with detailed examples
+- **[QUICK_REFERENCE.txt](QUICK_REFERENCE.txt)** - Quick command reference card
+- **[NASA SDO Website](https://sdo.gsfc.nasa.gov/)** - Official mission website
+- **[Helioviewer.org](https://helioviewer.org/)** - Interactive solar image viewer
+
+## 🛠️ Requirements
+
+- Python 3.7+
+- `requests` library (installed via requirements.txt)
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+- Report bugs
+- Suggest new features
+- Submit pull requests
+- Improve documentation
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🌟 Acknowledgments
+
+- **NASA/SDO** and the AIA, EVE, and HMI science teams for providing open access to solar data
+- **Helioviewer Project** for API access and tools
+- All solar physics researchers and space weather forecasters
+
+## 🔗 Useful Links
+
+- [SDO Mission Overview](https://sdo.gsfc.nasa.gov/mission/)
+- [Space Weather Prediction Center](https://www.swpc.noaa.gov/)
+- [Solar Data Analysis Center](https://umbra.nascom.nasa.gov/)
+- [Helioviewer API Docs](https://api.helioviewer.org/docs/)
+
+---
+
+**Made with ☀️ for solar physics research, education, and space weather monitoring**
+
+*If you find this tool useful, please ⭐ star this repository!*

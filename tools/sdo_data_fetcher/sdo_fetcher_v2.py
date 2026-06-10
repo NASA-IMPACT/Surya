@@ -19,7 +19,13 @@ class SDOFetcher:
         self.output_dir.mkdir(exist_ok=True)
         self.provider_client = SDOProviderClient(output_dir=output_dir)
     
-    def get_latest_image_png(self, source: str = "AIA_171", provider: str = "auto") -> Optional[Dict]:
+    def get_latest_image_png(
+        self,
+        source: str = "AIA_171",
+        provider: str = "auto",
+        width: int = 1024,
+        image_type: str = "png",
+    ) -> Optional[Dict]:
         """
         Fetch latest SDO image as PNG using a simpler method
         
@@ -29,14 +35,30 @@ class SDOFetcher:
         Returns:
             Dictionary with metadata and filepath
         """
-        return self.provider_client.download_latest_image(source=source, provider=provider)
+        return self.provider_client.download_latest_image(
+            source=source,
+            provider=provider,
+            width=width,
+            image_type=image_type,
+        )
     
-    def get_latest_image_direct(self, source: str = "AIA_171", provider: str = "auto") -> Optional[Dict]:
+    def get_latest_image_direct(
+        self,
+        source: str = "AIA_171",
+        provider: str = "auto",
+        width: int = 1024,
+        image_type: str = "png",
+    ) -> Optional[Dict]:
         """
         Alternative method: Fetch from SDO's direct image feed
         Uses helioviewer.org's pre-rendered latest images
         """
-        result = self.provider_client.download_latest_image(source=source, provider=provider)
+        result = self.provider_client.download_latest_image(
+            source=source,
+            provider=provider,
+            width=width,
+            image_type=image_type,
+        )
         if result:
             print(f"\n{'='*60}")
             print(f"Success! Downloaded latest SDO {source} image")
@@ -46,7 +68,13 @@ class SDOFetcher:
             print(f"{'='*60}\n")
         return result
     
-    def download_multiple(self, sources: list = None, provider: str = "auto"):
+    def download_multiple(
+        self,
+        sources: list = None,
+        provider: str = "auto",
+        width: int = 1024,
+        image_type: str = "png",
+    ):
         """Download multiple wavelengths"""
         if sources is None:
             sources = ["AIA_171", "AIA_193", "AIA_304", "HMI_Magnetogram"]
@@ -56,7 +84,12 @@ class SDOFetcher:
         
         results = []
         for source in sources:
-            result = self.get_latest_image_direct(source, provider=provider)
+            result = self.get_latest_image_direct(
+                source,
+                provider=provider,
+                width=width,
+                image_type=image_type,
+            )
             if result:
                 results.append(result)
         
@@ -134,7 +167,7 @@ def main():
     parser.add_argument('--list', '-l', action='store_true',
                        help='List available sources')
     parser.add_argument('--provider', '-p', default='auto',
-                       help='Data provider: auto, lmsal, jsoc, nasa, helioviewer')
+                       help='Data provider: auto, auto_highres, lmsal, jsoc, nasa, helioviewer')
     parser.add_argument('--datetime', '--date', dest='target_datetime',
                        help='Target date/time for historical fetch, e.g. 2026-02-06T12:30:00Z')
     parser.add_argument('--timezone', choices=['utc', 'local'], default='utc',
@@ -146,9 +179,9 @@ def main():
     parser.add_argument('--cadence', type=int, default=15,
                        help='Sample cadence in minutes for --datetime (default: 15)')
     parser.add_argument('--width', type=int, default=1024,
-                       help='Historical image width in pixels (default: 1024)')
+                       help='Requested image width in pixels for Helioviewer downloads (default: 1024)')
     parser.add_argument('--image-type', choices=['png', 'jpg', 'webp'], default='png',
-                       help='Historical image type (default: png)')
+                       help='Requested image type for Helioviewer downloads (default: png)')
     
     args = parser.parse_args()
     
@@ -184,9 +217,14 @@ def main():
         return
     
     if args.multiple:
-        fetcher.download_multiple(provider=args.provider)
+        fetcher.download_multiple(provider=args.provider, width=args.width, image_type=args.image_type)
     else:
-        fetcher.get_latest_image_direct(source=args.source, provider=args.provider)
+        fetcher.get_latest_image_direct(
+            source=args.source,
+            provider=args.provider,
+            width=args.width,
+            image_type=args.image_type,
+        )
 
 
 if __name__ == "__main__":
